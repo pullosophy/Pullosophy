@@ -1,0 +1,165 @@
+// Catalogo multi-gioco: Game -> CardSet -> Card -> Listing.
+// Un Listing e' cio' che si compra: carta singola, prodotto sigillato o carta gradata.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Game {
+  id        String    @id @default(cuid())
+  slug      String    @unique // "pokemon", "one-piece"
+  name      String
+  active    Boolean   @default(true)
+  sets      CardSet[]
+  listings  Listing[]
+  createdAt DateTime  @default(now())
+}
+
+model CardSet {
+  id          String    @id @default(cuid())
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  externalId  String? // id nell'API sorgente (es. "sv3pt5" su Pokémon TCG API)
+  slug        String
+  name        String
+  series      String?
+  releaseDate DateTime?
+  logoUrl     String?
+  symbolUrl   String?
+  cards       Card[]
+  listings    Listing[]
+
+  @@unique([gameId, slug])
+  @@unique([gameId, externalId])
+}
+
+model Card {
+  id         String    @id @default(cuid())
+  setId      String
+  set        CardSet   @relation(fields: [setId], references: [id])
+  externalId String?   @unique
+  number     String // numero nel set, es. "199/165"
+  name       String
+  rarity     String?
+  supertype  String? // Pokémon, Trainer, Energy, Leader, Character...
+  imageSmall String?
+  imageLarge String?
+  listings   Listing[]
+
+  @@unique([setId, number])
+  @@index([name])
+}
+
+enum ListingKind {
+  SINGLE
+  SEALED
+  GRADED
+}
+
+enum Condition {
+  MINT
+  NEAR_MINT
+  EXCELLENT
+  GOOD
+  LIGHT_PLAYED
+  PLAYED
+  POOR
+}
+
+enum SealedType {
+  BOOSTER_PACK
+  BOOSTER_BOX
+  ELITE_TRAINER_BOX
+  COLLECTION_BOX
+  TIN
+  BUNDLE
+  OTHER
+}
+
+enum Grader {
+  PSA
+  BGS
+  CGC
+  OTHER
+}
+
+model Listing {
+  id         String      @id @default(cuid())
+  kind       ListingKind
+  gameId     String
+  game       Game        @relation(fields: [gameId], references: [id])
+  setId      String?
+  set        CardSet?    @relation(fields: [setId], references: [id])
+  cardId     String? // obbligatorio per SINGLE e GRADED
+  card       Card?       @relation(fields: [cardId], references: [id])
+  title      String // per i sigillati, es. "Booster Box Scarlatto e Violetto 151"
+  language   String      @default("it") // it, en, ja...
+  condition  Condition? // SINGLE
+  sealedType SealedType? // SEALED
+  grader     Grader? // GRADED
+  grade      Decimal?    @db.Decimal(3, 1) // GRADED, es. 10 o 9.5
+  certNumber String? // GRADED
+  priceCents Int
+  stock      Int         @default(0)
+  images     String[] // foto reali (obbligatorie per le gradate)
+  published  Boolean     @default(false)
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([gameId, kind, published])
+  @@index([cardId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  email           String
+  status          OrderStatus @default(PENDING)
+  stripeSessionId String?     @unique
+  subtotalCents   Int
+  shippingCents   Int
+  taxCents        Int         @default(0)
+  totalCents      Int
+  currency        String      @default("eur")
+  shippingCountry String?
+  shippingAddress Json?
+  trackingNumber  String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id])
+  listingId      String
+  listing        Listing @relation(fields: [listingId], references: [id])
+  titleSnapshot  String
+  unitPriceCents Int
+  quantity       Int
+}
+
+// Zone di spedizione: Italia, UE, ecc.
+model ShippingZone {
+  id            String   @id @default(cuid())
+  name          String
+  countries     String[] // codici ISO, es. ["IT"]
+  baseCents     Int
+  freeOverCents Int?
+}
