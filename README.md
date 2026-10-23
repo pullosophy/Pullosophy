@@ -24,3 +24,15 @@ npm run db:seed             # giochi e zone di spedizione
 npm run import:pokemon -- sv3pt5   # espansioni Pokémon + carte del set indicato
 npm run dev
 ```
+
+## Pubblicazione su Vercel
+
+Variabili da impostare in Vercel (Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`
+(da Supabase → Connect → ORM/Prisma), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`.
+
+Vercel usa lo script `vercel-build`, che applica le migrazioni, inserisce giochi e zone di spedizione
+(operazione ripetibile senza duplicati) e poi compila il sito.
+
+Webhook Stripe: in Stripe → Developers → Webhooks aggiungi `https://<dominio>/api/stripe/webhook`
+con gli eventi `checkout.session.completed` e `checkout.session.expired`, poi copia il signing secret
+in `STRIPE_WEBHOOK_SECRET`.
