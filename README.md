@@ -28,7 +28,7 @@ npm run dev
 ## Pubblicazione su Vercel
 
 Variabili da impostare in Vercel (Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`
-(da Supabase → Connect → ORM/Prisma), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`.
+(da Supabase → Connect → ORM/Prisma), `ADMIN_PASSWORD`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`.
 
 Vercel usa lo script `vercel-build`, che applica le migrazioni, inserisce giochi e zone di spedizione
 (operazione ripetibile senza duplicati) e poi compila il sito.
@@ -36,3 +36,11 @@ Vercel usa lo script `vercel-build`, che applica le migrazioni, inserisce giochi
 Webhook Stripe: in Stripe → Developers → Webhooks aggiungi `https://<dominio>/api/stripe/webhook`
 con gli eventi `checkout.session.completed` e `checkout.session.expired`, poi copia il signing secret
 in `STRIPE_WEBHOOK_SECRET`.
+
+## Pannello admin
+
+`/admin`, protetto dalla password `ADMIN_PASSWORD`. Da lì:
+
+- **Espansioni**: aggiorna l'elenco delle espansioni Pokémon e importa le carte di quelle che vendi
+- **Prodotti**: crea e modifica carte singole, sigillati e gradate (prezzo, quantità, foto, online/bozza)
+- **Ordini**: vedi gli ordini con indirizzo, cambia lo stato e aggiungi il codice di tracking
