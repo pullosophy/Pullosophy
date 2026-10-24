@@ -10,7 +10,15 @@ export const metadata = { title: "Carrello" };
 
 const countryNames = new Intl.DisplayNames(["it"], { type: "region" });
 
-export default async function CartPage() {
+const errorMessages: Record<string, string> = {
+  config: "Il pagamento non è ancora attivo su questo sito (manca la configurazione Stripe). Il negozio è stato avvisato.",
+  StripeAuthenticationError: "Il pagamento non è configurato correttamente (chiave Stripe non valida). Il negozio è stato avvisato.",
+  StripeInvalidRequestError: "Stripe ha rifiutato la richiesta di pagamento. Riprova tra poco o scrivici.",
+  zona: "Non spediamo ancora nel Paese selezionato.",
+};
+
+export default async function CartPage({ searchParams }: { searchParams: Promise<{ errore?: string }> }) {
+  const { errore } = await searchParams;
   const lines = await cartLines();
   if (lines.length === 0) {
     return (
@@ -32,6 +40,11 @@ export default async function CartPage() {
   return (
     <div className="space-y-8">
       <h1 className="font-display text-6xl">Carrello</h1>
+      {errore && (
+        <p className="rounded-2xl border border-brand/30 bg-brand/5 p-4 text-sm text-brand-dark">
+          {errorMessages[errore] ?? "Non siamo riusciti ad avviare il pagamento. Riprova tra poco o scrivici."}
+        </p>
+      )}
       <ul className="divide-y divide-line">
         {lines.map(({ listing, quantity }) => (
           <li key={listing.id} className="flex items-center gap-4 py-3">
