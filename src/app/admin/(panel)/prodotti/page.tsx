@@ -20,7 +20,7 @@ export default async function ProductsPage() {
       {listings.length === 0 ? (
         <p className="opacity-70">Nessun prodotto ancora.</p>
       ) : (
-        <ul className="divide-y divide-black/10 dark:divide-white/10">
+        <ul className="divide-y divide-black/10">
           {listings.map((l) => (
             <li key={l.id}>
               <Link href={`/admin/prodotti/${l.id}`} className="flex items-center gap-3 py-3">
@@ -33,7 +33,7 @@ export default async function ProductsPage() {
                 </div>
                 <span className="text-sm">{l.stock} pz</span>
                 <span className="w-20 text-right text-sm">{formatPrice(l.priceCents)}</span>
-                <span className={`text-xs rounded px-2 py-0.5 ${l.published ? "bg-green-600/15" : "bg-black/10 dark:bg-white/10"}`}>
+                <span className={`text-xs rounded px-2 py-0.5 ${l.published ? "bg-green-600/15" : "bg-black/10"}`}>
                   {l.published ? "Online" : "Bozza"}
                 </span>
               </Link>

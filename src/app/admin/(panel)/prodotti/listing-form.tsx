@@ -25,7 +25,7 @@ export type ListingValues = {
   published: boolean;
 };
 
-const field = "mt-1 w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-3 py-2";
+const field = "mt-1 w-full rounded border border-black/20 bg-transparent px-3 py-2";
 
 export function ListingForm({ games, sets, initial }: { games: Option[]; sets: Option[]; initial: ListingValues }) {
   const [state, action, pending] = useActionState(saveListing, {});
