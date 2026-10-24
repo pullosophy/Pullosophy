@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useState } from "react";
 import { saveListing } from "@/app/actions/admin";
 import { conditionLabels, languageLabels, sealedLabels } from "@/lib/labels";
+import { ImageUploader } from "./image-uploader";
 
 type Option = { id: string; name: string };
 type CardOption = { id: string; name: string; number: string; rarity: string | null; imageSmall: string | null };
@@ -185,12 +186,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
         </label>
       </div>
 
-      <label className="block">
-        <span className="text-sm opacity-70">
-          Link alle foto (uno per riga). Per le gradate metti foto reali; se vuoto si usa l&apos;immagine della carta.
-        </span>
-        <textarea name="images" rows={3} defaultValue={initial.images} className={field} />
-      </label>
+      <ImageUploader initial={initial.images} />
 
       <label className="flex items-center gap-2">
         <input type="checkbox" name="published" defaultChecked={initial.published} />

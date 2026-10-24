@@ -28,7 +28,7 @@ npm run dev
 ## Pubblicazione su Vercel
 
 Variabili da impostare in Vercel (Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`
-(da Supabase → Connect → ORM/Prisma), `ADMIN_PASSWORD`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`.
+(da Supabase → Connect → ORM/Prisma), `ADMIN_PASSWORD`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`; per le pagine legali `COMPANY_LEGAL_NAME`, `COMPANY_VAT`, `COMPANY_ADDRESS`, `COMPANY_EMAIL`.
 
 Vercel usa lo script `vercel-build`, che applica le migrazioni, inserisce giochi e zone di spedizione
 (operazione ripetibile senza duplicati) e poi compila il sito.
@@ -39,7 +39,7 @@ in `STRIPE_WEBHOOK_SECRET`.
 
 ## Pannello admin
 
-`/admin`, protetto dalla password `ADMIN_PASSWORD`. Da lì:
+`/admin`, protetto dalla password `ADMIN_PASSWORD`. Per caricare foto dal pannello serve Vercel Blob: Vercel → Storage → Create → Blob, collegato al progetto (aggiunge `BLOB_READ_WRITE_TOKEN` da solo). Da lì:
 
 - **Espansioni**: aggiorna l'elenco delle espansioni Pokémon e importa le carte di quelle che vendi
 - **Prodotti**: crea e modifica carte singole, sigillati e gradate (prezzo, quantità, foto, online/bozza)

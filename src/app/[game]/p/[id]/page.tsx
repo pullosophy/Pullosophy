@@ -83,6 +83,16 @@ export default async function ListingPage({ params }: Params) {
     ["Certificato", listing.certNumber ?? undefined],
   ];
 
+  // Link per verificare il certificato sul sito dell'ente di grading.
+  const certUrl =
+    listing.certNumber && listing.grader === "PSA"
+      ? `https://www.psacard.com/cert/${encodeURIComponent(listing.certNumber)}`
+      : listing.certNumber && listing.grader === "CGC"
+        ? `https://www.cgccards.com/certlookup/${encodeURIComponent(listing.certNumber)}`
+        : listing.certNumber && listing.grader === "BGS"
+          ? `https://www.beckett.com/grading/card-lookup?item_number=${encodeURIComponent(listing.certNumber)}`
+          : null;
+
   return (
     <div className="grid gap-10 md:grid-cols-2">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
@@ -102,6 +112,23 @@ export default async function ListingPage({ params }: Params) {
           <h1 className="font-display mt-2 text-5xl">{listing.title}</h1>
         </div>
         <p className="text-3xl font-semibold">{formatPrice(listing.priceCents)}</p>
+        {listing.grader && (
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted p-4 text-sm">
+            <span className="rounded-md bg-brand px-3 py-1 font-display text-2xl text-white">
+              {listing.grader} {String(listing.grade)}
+            </span>
+            <div>
+              <p className="font-semibold">Carta gradata, custodia sigillata</p>
+              {certUrl ? (
+                <a href={certUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                  Verifica il certificato n. {listing.certNumber} su {listing.grader}
+                </a>
+              ) : (
+                <p className="text-black/60">Foto reali della custodia. Spedita in scatola rigida con pluriball.</p>
+              )}
+            </div>
+          </div>
+        )}
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 border-y border-line py-4 text-sm">
           {details
             .filter(([, value]) => value)
