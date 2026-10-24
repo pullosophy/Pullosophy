@@ -71,6 +71,9 @@ export default async function CartPage() {
           </select>
         </label>
         <button className="w-full rounded-full bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Vai al pagamento</button>
+        <p className="text-center text-xs text-black/50">
+          Procedendo accetti i <Link href="/termini" className="underline">termini di vendita</Link>. Reso entro 14 giorni.
+        </p>
         <p className="text-xs opacity-70">Le spese di spedizione sono calcolate in base al paese. Prezzi IVA inclusa.</p>
       </form>
     </div>
