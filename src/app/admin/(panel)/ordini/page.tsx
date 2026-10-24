@@ -29,7 +29,7 @@ export default async function OrdersPage() {
         const ship = o.shippingAddress as Address | null;
         const a = ship?.address;
         return (
-          <section key={o.id} className="rounded-lg border border-black/10 dark:border-white/15 p-4 space-y-3">
+          <section key={o.id} className="rounded-lg border border-black/10 p-4 space-y-3">
             <div className="flex flex-wrap justify-between gap-2">
               <div>
                 <p className="font-medium">{o.email}</p>
@@ -55,7 +55,7 @@ export default async function OrdersPage() {
             )}
             <form action={updateOrder} className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="id" value={o.id} />
-              <select name="status" defaultValue={o.status} className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1 text-sm">
+              <select name="status" defaultValue={o.status} className="rounded border border-black/20 bg-transparent px-2 py-1 text-sm">
                 {Object.entries(statusLabels).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
@@ -64,9 +64,9 @@ export default async function OrdersPage() {
                 name="trackingNumber"
                 defaultValue={o.trackingNumber ?? ""}
                 placeholder="Codice tracking"
-                className="rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1 text-sm"
+                className="rounded border border-black/20 bg-transparent px-2 py-1 text-sm"
               />
-              <button className="rounded border border-black/20 dark:border-white/20 px-3 py-1 text-sm">Salva</button>
+              <button className="rounded border border-black/20 px-3 py-1 text-sm">Salva</button>
             </form>
           </section>
         );

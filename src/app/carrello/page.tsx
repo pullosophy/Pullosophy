@@ -15,7 +15,7 @@ export default async function CartPage() {
   if (lines.length === 0) {
     return (
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold">Carrello</h1>
+        <h1 className="font-display text-6xl">Carrello</h1>
         <p className="opacity-70">Il carrello è vuoto.</p>
         <Link href="/pokemon" className="underline">Vai al catalogo</Link>
       </div>
@@ -31,8 +31,8 @@ export default async function CartPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Carrello</h1>
-      <ul className="divide-y divide-black/10 dark:divide-white/10">
+      <h1 className="font-display text-6xl">Carrello</h1>
+      <ul className="divide-y divide-line">
         {lines.map(({ listing, quantity }) => (
           <li key={listing.id} className="flex items-center gap-4 py-3">
             <Link href={`/${listing.game.slug}/p/${listing.id}`} className="flex-1 font-medium">
@@ -46,7 +46,7 @@ export default async function CartPage() {
                 defaultValue={quantity}
                 min={0}
                 max={listing.stock}
-                className="w-16 rounded border border-black/20 dark:border-white/20 bg-transparent px-2 py-1"
+                className="w-16 rounded border border-line bg-white px-2 py-1"
               />
               <button className="text-sm underline">Aggiorna</button>
             </form>
@@ -60,17 +60,17 @@ export default async function CartPage() {
       <form action={startCheckout} className="ml-auto max-w-sm space-y-3">
         <label className="block">
           <span className="text-sm opacity-70">Email</span>
-          <input type="email" name="email" required className="mt-1 w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-3 py-2" />
+          <input type="email" name="email" required className="mt-1 w-full rounded border border-line bg-white px-3 py-2" />
         </label>
         <label className="block">
           <span className="text-sm opacity-70">Paese di spedizione</span>
-          <select name="country" defaultValue="IT" className="mt-1 w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-3 py-2">
+          <select name="country" defaultValue="IT" className="mt-1 w-full rounded border border-line bg-white px-3 py-2">
             {countries.map((c) => (
               <option key={c.code} value={c.code}>{c.name}</option>
             ))}
           </select>
         </label>
-        <button className="w-full rounded bg-foreground text-background px-5 py-3 font-medium">Vai al pagamento</button>
+        <button className="w-full rounded-full bg-brand px-5 py-3 font-semibold text-white hover:bg-brand-dark">Vai al pagamento</button>
         <p className="text-xs opacity-70">Le spese di spedizione sono calcolate in base al paese. Prezzi IVA inclusa.</p>
       </form>
     </div>

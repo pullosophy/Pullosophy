@@ -19,7 +19,7 @@ export default async function AdminHome() {
     <div className="space-y-6">
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         {stats.map((s) => (
-          <Link key={s.label} href={s.href} className="rounded-lg border border-black/10 dark:border-white/15 p-4">
+          <Link key={s.label} href={s.href} className="rounded-lg border border-black/10 p-4">
             <p className="text-sm opacity-70">{s.label}</p>
             <p className="text-2xl font-semibold mt-1">{s.value}</p>
           </Link>

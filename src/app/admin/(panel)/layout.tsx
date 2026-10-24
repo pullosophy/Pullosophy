@@ -14,7 +14,7 @@ const links = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="space-y-6">
-      <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-black/10 dark:border-white/10 pb-3">
+      <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-black/10 pb-3">
         <span className="font-semibold">Admin</span>
         {links.map((l) => (
           <Link key={l.href} href={l.href} className="underline-offset-4 hover:underline">

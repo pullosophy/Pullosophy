@@ -15,7 +15,7 @@ export function SubmitButton({
   const style =
     variant === "solid"
       ? "bg-foreground text-background"
-      : "border border-black/20 dark:border-white/20";
+      : "border border-black/20";
   return (
     <button disabled={status.pending} className={`rounded px-4 py-2 text-sm font-medium disabled:opacity-50 ${style}`}>
       {status.pending ? pending : children}

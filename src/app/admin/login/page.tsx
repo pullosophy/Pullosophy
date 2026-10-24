@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         required
         autoFocus
         placeholder="Password"
-        className="w-full rounded border border-black/20 dark:border-white/20 bg-transparent px-3 py-2"
+        className="w-full rounded border border-black/20 bg-transparent px-3 py-2"
       />
       <button className="w-full rounded bg-foreground text-background px-5 py-2 font-medium">Entra</button>
     </form>

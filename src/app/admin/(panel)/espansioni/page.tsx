@@ -20,14 +20,18 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
           <SubmitButton pending="Aggiorno…">Aggiorna elenco espansioni</SubmitButton>
         </form>
       </div>
-      {ok && <p className="rounded bg-green-600/15 px-3 py-2 text-sm">{ok}</p>}
+      {ok && (
+        <p className={`rounded px-3 py-2 text-sm ${ok.startsWith("Errore") ? "bg-red-600/15" : "bg-green-600/15"}`}>
+          {ok}
+        </p>
+      )}
       <p className="text-sm opacity-70">
         Importa le carte solo delle espansioni che vendi: servono per creare carte singole e gradate.
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>
       ) : (
-        <ul className="divide-y divide-black/10 dark:divide-white/10">
+        <ul className="divide-y divide-black/10">
           {sets.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}

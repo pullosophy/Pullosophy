@@ -23,9 +23,13 @@ async function get<T>(path: string): Promise<{ data: T[]; totalCount: number }> 
   const headers: Record<string, string> = process.env.POKEMONTCG_API_KEY
     ? { "X-Api-Key": process.env.POKEMONTCG_API_KEY }
     : {};
-  const res = await fetch(`${API}${path}`, { headers, cache: "no-store" });
-  if (!res.ok) throw new Error(`Pokémon TCG API: ${res.status} ${path}`);
-  return res.json();
+  // L'API pubblica risponde spesso 5xx senza chiave: qualche tentativo con attesa crescente.
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(`${API}${path}`, { headers, cache: "no-store" });
+    if (res.ok) return res.json();
+    if (res.status < 500 || attempt === 3) throw new Error(`Pokémon TCG API: ${res.status} ${path}`);
+    await new Promise((r) => setTimeout(r, 1000 * attempt));
+  }
 }
 
 async function pokemonGameId(db: PrismaClient) {
