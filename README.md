@@ -39,7 +39,7 @@ in `STRIPE_WEBHOOK_SECRET`.
 
 ## Pannello admin
 
-`/admin`, protetto dalla password `ADMIN_PASSWORD`. Da lì:
+`/admin`, protetto dalla password `ADMIN_PASSWORD`. Per caricare foto dal pannello serve Vercel Blob: Vercel → Storage → Create → Blob, collegato al progetto (aggiunge `BLOB_READ_WRITE_TOKEN` da solo). Da lì:
 
 - **Espansioni**: aggiorna l'elenco delle espansioni Pokémon e importa le carte di quelle che vendi
 - **Prodotti**: crea e modifica carte singole, sigillati e gradate (prezzo, quantità, foto, online/bozza)
