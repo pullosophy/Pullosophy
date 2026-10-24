@@ -28,7 +28,7 @@ npm run dev
 ## Pubblicazione su Vercel
 
 Variabili da impostare in Vercel (Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`
-(da Supabase → Connect → ORM/Prisma), `ADMIN_PASSWORD`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`.
+(da Supabase → Connect → ORM/Prisma), `ADMIN_PASSWORD`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`; per le pagine legali `COMPANY_LEGAL_NAME`, `COMPANY_VAT`, `COMPANY_ADDRESS`, `COMPANY_EMAIL`.
 
 Vercel usa lo script `vercel-build`, che applica le migrazioni, inserisce giochi e zone di spedizione
 (operazione ripetibile senza duplicati) e poi compila il sito.

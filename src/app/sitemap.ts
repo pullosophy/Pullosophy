@@ -13,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
   return [
+    ...["/spedizioni", "/condizioni-carte", "/vendi", "/termini", "/privacy", "/cookie"].map((path) => ({
+      url: `${base}${path}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.4,
+    })),
     { url: base, changeFrequency: "daily", priority: 1 },
     ...games.map((g) => ({ url: `${base}/${g.slug}`, changeFrequency: "daily" as const, priority: 0.8 })),
     ...listings.map((l) => ({ url: `${base}/${l.game.slug}/p/${l.id}`, lastModified: l.updatedAt, priority: 0.6 })),
