@@ -78,7 +78,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <div className="text-sm space-y-2 text-white/80">
               <p className="font-semibold uppercase tracking-widest text-xs text-white/50">Info</p>
               <p>Mantova, Italia</p>
-              <p>Spedizioni in Italia e in tutta l&apos;Unione Europea</p>
+              <Link href="/spedizioni" className="block hover:text-brand">Spedizioni e resi</Link>
+              <Link href="/condizioni-carte" className="block hover:text-brand">Condizioni delle carte</Link>
               <p>Pagamenti sicuri con Stripe</p>
             </div>
           </div>

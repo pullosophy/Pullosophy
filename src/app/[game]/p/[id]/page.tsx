@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -7,15 +9,69 @@ import { addToCart } from "@/app/actions/cart";
 
 export const dynamic = "force-dynamic";
 
-export default async function ListingPage({ params }: { params: Promise<{ game: string; id: string }> }) {
-  const { game, id } = await params;
+type Params = { params: Promise<{ game: string; id: string }> };
+
+// Condiviso tra metadata e pagina: una sola query per richiesta.
+const getListing = cache(async (game: string, id: string) => {
   const listing = await db.listing.findUnique({
     where: { id },
     include: { card: true, set: true, game: true },
   });
-  if (!listing || !listing.published || listing.game.slug !== game) notFound();
+  if (!listing || !listing.published || listing.game.slug !== game) return null;
+  return listing;
+});
 
-  const images = listing.images.length > 0 ? listing.images : [listing.card?.imageLarge].filter((u): u is string => !!u);
+function listingImages(listing: NonNullable<Awaited<ReturnType<typeof getListing>>>) {
+  return listing.images.length > 0 ? listing.images : [listing.card?.imageLarge].filter((u): u is string => !!u);
+}
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { game, id } = await params;
+  const listing = await getListing(game, id);
+  if (!listing) return {};
+  const description = [
+    listing.set?.name,
+    languageLabels[listing.language] ?? listing.language,
+    listing.condition && conditionLabels[listing.condition],
+    listing.grader && `${listing.grader} ${listing.grade}`,
+    formatPrice(listing.priceCents),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const image = listingImages(listing)[0];
+  return {
+    title: listing.title,
+    description: `${listing.title}: ${description}. Spedizione in tutta Europa da Pullosophy, Mantova.`,
+    alternates: { canonical: `/${game}/p/${id}` },
+    openGraph: { title: listing.title, description, images: image ? [image] : undefined },
+  };
+}
+
+export default async function ListingPage({ params }: Params) {
+  const { game, id } = await params;
+  const listing = await getListing(game, id);
+  if (!listing) notFound();
+
+  const images = listingImages(listing);
+  // Dati strutturati per Google (prezzo e disponibilita' nei risultati di ricerca).
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: listing.title,
+    image: images,
+    sku: listing.id,
+    brand: { "@type": "Brand", name: listing.game.name },
+    offers: {
+      "@type": "Offer",
+      price: (listing.priceCents / 100).toFixed(2),
+      priceCurrency: "EUR",
+      availability: listing.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition:
+        listing.kind === "SEALED" || listing.condition === "MINT"
+          ? "https://schema.org/NewCondition"
+          : "https://schema.org/UsedCondition",
+    },
+  };
   const details: [string, string | undefined][] = [
     ["Espansione", listing.set?.name],
     ["Numero", listing.card?.number],
@@ -29,6 +85,7 @@ export default async function ListingPage({ params }: { params: Promise<{ game: 
 
   return (
     <div className="grid gap-10 md:grid-cols-2">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="space-y-3">
         {images.map((src) => (
           <div key={src} className="rounded-2xl bg-muted p-6">
