@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { ListingCard } from "@/components/listing-card";
+import { TrustBar } from "@/components/trust-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -8,12 +9,6 @@ const categories = [
   { href: "/pokemon?tipo=single", title: "Carte singole", text: "Ogni carta con lingua e condizione indicate, controllata a mano." },
   { href: "/pokemon?tipo=sealed", title: "Sigillati", text: "Booster box, buste, Elite Trainer Box e collezioni." },
   { href: "/pokemon?tipo=graded", title: "Gradate", text: "PSA, BGS e CGC, con le foto reali di ogni slab." },
-];
-
-const promises = [
-  { title: "Controllate a mano", text: "Ogni singola viene verificata prima della spedizione." },
-  { title: "Spedite con cura", text: "Toploader, bustine e cartone rigido. Tracciamento sempre incluso." },
-  { title: "Pagamenti sicuri", text: "Carta, Apple Pay e Google Pay tramite Stripe." },
 ];
 
 export default async function Home() {
@@ -76,17 +71,7 @@ export default async function Home() {
         )}
       </section>
 
-      <section className="grid gap-6 rounded-2xl bg-muted p-8 sm:grid-cols-3">
-        {promises.map((p) => (
-          <div key={p.title}>
-            <p className="flex items-center gap-2 font-semibold">
-              <span className="h-0.5 w-4 bg-brand" />
-              {p.title}
-            </p>
-            <p className="mt-1 text-sm text-black/60">{p.text}</p>
-          </div>
-        ))}
-      </section>
+      <TrustBar />
 
       <section className="rounded-2xl bg-foreground px-8 py-12 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">In arrivo</p>
