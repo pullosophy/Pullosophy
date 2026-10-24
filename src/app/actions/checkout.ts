@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { cartLines, writeCart } from "@/lib/cart";
+import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 
 const schema = z.object({ country: z.string().length(2), email: z.email() });
@@ -15,7 +16,7 @@ export async function startCheckout(formData: FormData) {
   if (lines.length === 0) redirect("/carrello");
 
   const zone = await db.shippingZone.findFirst({ where: { countries: { has: country } } });
-  if (!zone) throw new Error(`Spedizione non disponibile per ${country}`);
+  if (!zone) redirect("/carrello?errore=zona");
 
   const subtotalCents = lines.reduce((sum, l) => sum + l.listing.priceCents * l.quantity, 0);
   const shippingCents = zone.freeOverCents !== null && subtotalCents >= zone.freeOverCents ? 0 : zone.baseCents;
@@ -79,7 +80,11 @@ export async function startCheckout(formData: FormData) {
       db.orderItem.deleteMany({ where: { orderId: order.id } }),
       db.order.delete({ where: { id: order.id } }),
     ]);
-    throw err;
+    // Il dettaglio finisce nei log di Vercel; al cliente un messaggio leggibile.
+    console.error("[checkout] Stripe error:", err);
+    const code =
+      err instanceof Stripe.errors.StripeError ? err.type : err instanceof Error && /STRIPE_SECRET_KEY/.test(err.message) ? "config" : "unknown";
+    redirect(`/carrello?errore=${encodeURIComponent(code)}`);
   }
 
   await db.order.update({ where: { id: order.id }, data: { stripeSessionId: session.id } });
