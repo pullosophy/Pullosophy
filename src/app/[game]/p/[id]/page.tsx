@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
-import { conditionLabels, languageLabels, sealedLabels } from "@/lib/labels";
+import { conditionLabels } from "@/lib/labels";
+import { getT, type Dictionary } from "@/lib/i18n";
 import { addToCart } from "@/app/actions/cart";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +27,12 @@ function listingImages(listing: NonNullable<Awaited<ReturnType<typeof getListing
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { game, id } = await params;
+  const [{ game, id }, { t }] = await Promise.all([params, getT()]);
   const listing = await getListing(game, id);
   if (!listing) return {};
   const description = [
     listing.set?.name,
-    languageLabels[listing.language] ?? listing.language,
+    lang(t, listing.language),
     listing.condition && conditionLabels[listing.condition],
     listing.grader && `${listing.grader} ${listing.grade}`,
     formatPrice(listing.priceCents),
@@ -41,14 +42,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const image = listingImages(listing)[0];
   return {
     title: listing.title,
-    description: `${listing.title}: ${description}. Spedizione in tutta Europa da Pullosophy, Mantova.`,
+    description: `${listing.title}: ${description}. ${t.product.metaSuffix}`,
     alternates: { canonical: `/${game}/p/${id}` },
     openGraph: { title: listing.title, description, images: image ? [image] : undefined },
   };
 }
 
+const lang = (t: Dictionary, code: string) => t.languages[code as keyof typeof t.languages] ?? code;
+
 export default async function ListingPage({ params }: Params) {
-  const { game, id } = await params;
+  const [{ game, id }, { t }] = await Promise.all([params, getT()]);
   const listing = await getListing(game, id);
   if (!listing) notFound();
 
@@ -73,14 +76,14 @@ export default async function ListingPage({ params }: Params) {
     },
   };
   const details: [string, string | undefined][] = [
-    ["Espansione", listing.set?.name],
-    ["Numero", listing.card?.number],
-    ["Rarità", listing.card?.rarity ?? undefined],
-    ["Lingua", languageLabels[listing.language] ?? listing.language],
-    ["Condizione", listing.condition ? conditionLabels[listing.condition] : undefined],
-    ["Tipo", listing.sealedType ? sealedLabels[listing.sealedType] : undefined],
-    ["Gradazione", listing.grader ? `${listing.grader} ${listing.grade}` : undefined],
-    ["Certificato", listing.certNumber ?? undefined],
+    [t.product.set, listing.set?.name],
+    [t.product.number, listing.card?.number],
+    [t.product.rarity, listing.card?.rarity ?? undefined],
+    [t.product.language, lang(t, listing.language)],
+    [t.product.condition, listing.condition ? conditionLabels[listing.condition] : undefined],
+    [t.product.type, listing.sealedType ? t.sealed[listing.sealedType] : undefined],
+    [t.product.grading, listing.grader ? `${listing.grader} ${listing.grade}` : undefined],
+    [t.product.cert, listing.certNumber ?? undefined],
   ];
 
   // Link per verificare il certificato sul sito dell'ente di grading.
@@ -118,13 +121,13 @@ export default async function ListingPage({ params }: Params) {
               {listing.grader} {String(listing.grade)}
             </span>
             <div>
-              <p className="font-semibold">Carta gradata, custodia sigillata</p>
+              <p className="font-semibold">{t.product.gradedTitle}</p>
               {certUrl ? (
                 <a href={certUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                  Verifica il certificato n. {listing.certNumber} su {listing.grader}
+                  {t.product.verifyCert} {listing.certNumber} {t.product.on} {listing.grader}
                 </a>
               ) : (
-                <p className="text-black/60">Foto reali della custodia. Spedita in scatola rigida con pluriball.</p>
+                <p className="text-black/60">{t.product.gradedText}</p>
               )}
             </div>
           </div>
@@ -151,11 +154,11 @@ export default async function ListingPage({ params }: Params) {
               className="w-20 rounded-full border border-line px-4 py-3"
             />
             <button className="flex-1 rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark">
-              Aggiungi al carrello
+              {t.product.addToCart}
             </button>
           </form>
         ) : (
-          <p className="rounded-full bg-muted px-6 py-3 text-center font-semibold">Esaurito</p>
+          <p className="rounded-full bg-muted px-6 py-3 text-center font-semibold">{t.product.soldOut}</p>
         )}
       </div>
     </div>
