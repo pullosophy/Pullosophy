@@ -25,7 +25,8 @@ model CardSet {
   id          String    @id @default(cuid())
   gameId      String
   game        Game      @relation(fields: [gameId], references: [id])
-  externalId  String? // id nell'API sorgente (es. "sv3pt5" su Pokémon TCG API)
+  externalId  String? // id nella vecchia Pokémon TCG API (es. "sv3pt5"), tenuto per compatibilita'
+  tcgdexId    String? // id su TCGdex (es. "sv03.5"), la sorgente attuale di carte e prezzi
   slug        String
   name        String
   series      String?
@@ -37,6 +38,7 @@ model CardSet {
 
   @@unique([gameId, slug])
   @@unique([gameId, externalId])
+  @@unique([gameId, tcgdexId])
 }
 
 model Card {
@@ -50,12 +52,13 @@ model Card {
   supertype  String? // Pokémon, Trainer, Energy, Leader, Character...
   imageSmall String?
   imageLarge String?
-  // Prezzi di riferimento Cardmarket (dalla Pokémon TCG API), in centesimi: aiutano a prezzare dall'admin.
+  // Prezzi di riferimento Cardmarket (da TCGdex), in centesimi: aiutano a prezzare dall'admin.
   cmTrendCents   Int?
   cmAvgCents     Int?
   cmLowCents     Int?
   cmUrl          String?
   cmUpdatedAt    DateTime?
+  syncedAt       DateTime? // ultimo scarico da TCGdex (per riprendere un import interrotto)
   listings   Listing[]
 
   @@unique([setId, number])

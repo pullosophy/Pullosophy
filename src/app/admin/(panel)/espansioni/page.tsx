@@ -26,8 +26,9 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         </p>
       )}
       <p className="text-sm opacity-70">
-        Importa le carte solo delle espansioni che vendi: servono per creare carte singole e gradate. Con le carte arrivano
-        anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte” ogni tanto per averli freschi.
+        Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). Importa le carte solo delle espansioni che vendi: servono per
+        creare carte singole e gradate. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
+        ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato.
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>
@@ -40,11 +41,11 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
               <div className="flex-1">
                 <p className="font-medium">{s.name}</p>
                 <p className="text-xs opacity-60">
-                  {s.series} · {s.externalId} · {s._count.cards} carte importate
+                  {s.series} · {s.tcgdexId ?? "non collegata a TCGdex"} · {s._count.cards} carte importate
                 </p>
               </div>
               <form action={importCards}>
-                <input type="hidden" name="externalId" value={s.externalId ?? ""} />
+                <input type="hidden" name="setId" value={s.id} />
                 <SubmitButton pending="Importo…" variant="outline">
                   {s._count.cards > 0 ? "Aggiorna carte" : "Importa carte"}
                 </SubmitButton>
