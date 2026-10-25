@@ -1,0 +1,1 @@
+ALTER TABLE "CardSet" ADD COLUMN "nameIt" TEXT;

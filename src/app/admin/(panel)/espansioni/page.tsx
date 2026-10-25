@@ -50,7 +50,10 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
                 )}
               </span>
               <div className="flex-1">
-                <p className="font-medium">{s.name}</p>
+                <p className="font-medium">
+                  {s.name}
+                  {s.nameIt && s.nameIt !== s.name && <span className="ml-2 font-normal text-black/50">🇮🇹 {s.nameIt}</span>}
+                </p>
                 <p className="text-xs opacity-60">
                   {s.series} · {s.tcgdexId ?? "non collegata a TCGdex"} · {s._count.cards} carte importate
                 </p>
