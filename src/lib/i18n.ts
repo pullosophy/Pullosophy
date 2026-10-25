@@ -15,12 +15,14 @@ export async function getLocale(): Promise<Locale> {
 const it = {
   // Layout
   topbar: "Spedizioni in tutta Europa · Gratis in Italia sopra 100 €",
+  previewBanner: "Anteprima: negozio in apertura, i pagamenti non sono ancora attivi.",
   nav: { singles: "Singole", sealed: "Sigillati", graded: "Gradate", comingSoon: "In arrivo", cart: "Carrello" },
   footer: {
     shop: "Negozio",
     info: "Info",
     legal: "Legale",
     location: "Mantova, Italia",
+    follow: "Seguici",
     shipping: "Spedizioni e resi",
     conditions: "Condizioni delle carte",
     sell: "Vendi le tue carte",
@@ -219,12 +221,14 @@ export type Dictionary = typeof it;
 
 const en: Dictionary = {
   topbar: "Shipping across Europe · Free in Italy over €100",
+  previewBanner: "Preview: the shop is opening soon, payments are not active yet.",
   nav: { singles: "Singles", sealed: "Sealed", graded: "Graded", comingSoon: "Coming soon", cart: "Cart" },
   footer: {
     shop: "Shop",
     info: "Info",
     legal: "Legal",
     location: "Mantua, Italy",
+    follow: "Follow us",
     shipping: "Shipping & returns",
     conditions: "Card conditions",
     sell: "Sell your cards",

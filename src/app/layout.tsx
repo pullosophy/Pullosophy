@@ -1,4 +1,4 @@
-import { company } from "@/lib/company";
+import { company, previewMode, socials } from "@/lib/company";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bebas_Neue, Inter } from "next/font/google";
@@ -32,6 +32,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale} className={`${inter.variable} ${bebas.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col">
+        {previewMode && (
+          <div className="bg-brand px-4 py-1.5 text-center text-xs font-semibold text-white">{t.previewBanner}</div>
+        )}
         <div className="bg-foreground text-white text-center text-xs py-1.5 px-4">
           {t.topbar}
         </div>
@@ -79,6 +82,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 PULL<span className="text-brand">OSOPHY</span>
               </p>
               <p className="text-sm text-white/70">{t.home.tagline}</p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {socials.map((s) => (
+                  <a
+                    key={s.name}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${t.footer.follow}: ${s.name}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-sm hover:border-brand hover:text-brand"
+                  >
+                    <SocialIcon name={s.name} />
+                    {s.handle}
+                  </a>
+                ))}
+              </div>
             </div>
             <div className="text-sm space-y-2">
               <p className="font-semibold uppercase tracking-widest text-xs text-white/50">{t.footer.shop}</p>
@@ -110,5 +128,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </footer>
       </body>
     </html>
+  );
+}
+
+function SocialIcon({ name }: { name: string }) {
+  if (name === "TikTok")
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M16.5 3c.4 2.3 1.9 3.9 4.2 4.1v3.1c-1.6 0-3-.5-4.2-1.3v6.4a5.7 5.7 0 1 1-5.7-5.7c.3 0 .6 0 .9.1v3.2a2.6 2.6 0 1 0 1.7 2.4V3h3.1z" />
+      </svg>
+    );
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
   );
 }

@@ -9,3 +9,12 @@ export const company = {
   email: process.env.COMPANY_EMAIL ?? "info@pullosophy.it",
   city: "Mantova",
 };
+
+// Profili social mostrati nel footer.
+export const socials = [
+  { name: "Instagram", handle: "@pullosophy_tgc", url: "https://www.instagram.com/pullosophy_tgc/" },
+  { name: "TikTok", handle: "@pullosophy", url: "https://www.tiktok.com/@pullosophy" },
+];
+
+// Finché Stripe e' in modalita' test (chiave sk_test_) il sito mostra la striscia "negozio in apertura".
+export const previewMode = !process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.startsWith("sk_test_");
