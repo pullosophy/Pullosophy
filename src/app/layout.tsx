@@ -6,6 +6,8 @@ import { Logo } from "@/components/logo";
 import { cartCount } from "@/lib/cart-count";
 import { getT } from "@/lib/i18n";
 import { LanguageSwitch } from "@/components/language-switch";
+import { WelcomePopup } from "@/components/welcome-popup";
+import { WELCOME_PERCENT } from "@/lib/welcome";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -69,6 +71,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           </nav>
         </header>
         <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
+        <WelcomePopup labels={t.welcome} percent={WELCOME_PERCENT} />
         <footer className="mt-16 bg-foreground text-white">
           <div className="mx-auto max-w-6xl px-4 py-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-3">
