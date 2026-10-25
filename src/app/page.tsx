@@ -7,7 +7,7 @@ import { getT } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { t } = await getT();
+  const { locale, t } = await getT();
   const categories = ["/pokemon?tipo=single", "/pokemon?tipo=sealed", "/pokemon?tipo=graded"].map((href, i) => ({ href, ...t.home.categories[i] }));
   const [latest, upcoming] = await Promise.all([
     db.listing.findMany({
@@ -71,7 +71,7 @@ export default async function Home() {
         ) : (
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {latest.map((l) => (
-              <ListingCard key={l.id} listing={l} t={t} />
+              <ListingCard key={l.id} listing={l} t={t} locale={locale} />
             ))}
           </div>
         )}
@@ -85,7 +85,7 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
             {upcoming.map((l) => (
-              <ListingCard key={l.id} listing={l} t={t} />
+              <ListingCard key={l.id} listing={l} t={t} locale={locale} />
             ))}
           </div>
         </section>

@@ -6,7 +6,7 @@ export async function GET(req: Request) {
   const setId = new URL(req.url).searchParams.get("setId");
   if (!setId) return Response.json([]);
   const [set, existing] = await Promise.all([
-    db.cardSet.findUnique({ where: { id: setId }, select: { name: true, series: true, releaseDate: true, logoUrl: true } }),
+    db.cardSet.findUnique({ where: { id: setId }, select: { name: true, nameIt: true, series: true, releaseDate: true, logoUrl: true } }),
     db.listing.findMany({
       where: { setId, kind: "SEALED", sealedType: { not: null } },
       select: { sealedType: true, title: true, images: true },

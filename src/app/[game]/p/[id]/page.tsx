@@ -10,6 +10,7 @@ import { addToCart } from "@/app/actions/cart";
 import { RestockForm } from "@/components/restock-form";
 import { SafeImage } from "@/components/safe-image";
 import { ListingCard } from "@/components/listing-card";
+import { setName } from "@/lib/set-name";
 import { whatsappUrl } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
@@ -33,11 +34,11 @@ function listingImages(listing: NonNullable<Awaited<ReturnType<typeof getListing
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const [{ game, id }, { t }] = await Promise.all([params, getT()]);
+  const [{ game, id }, { locale, t }] = await Promise.all([params, getT()]);
   const listing = await getListing(game, id);
   if (!listing) return {};
   const description = [
-    listing.set?.name,
+    setName(listing.set, locale) || undefined,
     lang(t, listing.language),
     listing.condition && conditionLabels[listing.condition],
     listing.grader && `${listing.grader} ${listing.grade}`,
@@ -93,7 +94,7 @@ export default async function ListingPage({ params }: Params) {
     },
   };
   const details: [string, string | undefined][] = [
-    [t.product.set, listing.set?.name],
+    [t.product.set, setName(listing.set, locale) || undefined],
     [t.product.number, listing.card?.number],
     [t.product.rarity, listing.card?.rarity ?? undefined],
     [t.product.language, lang(t, listing.language)],
@@ -224,7 +225,7 @@ export default async function ListingPage({ params }: Params) {
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {related.map((l) => (
-            <ListingCard key={l.id} listing={l} t={t} />
+            <ListingCard key={l.id} listing={l} t={t} locale={locale} />
           ))}
         </div>
       </section>

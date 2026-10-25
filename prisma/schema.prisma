@@ -29,6 +29,7 @@ model CardSet {
   tcgdexId    String? // id su TCGdex (es. "sv03.5"), la sorgente attuale di carte e prezzi
   slug        String
   name        String
+  nameIt      String? // nome italiano da TCGdex (manca per qualche espansione)
   series      String?
   releaseDate DateTime?
   logoUrl     String?

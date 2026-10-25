@@ -1,3 +1,5 @@
+import { setName } from "@/lib/set-name";
+import type { Locale } from "@/lib/i18n";
 import Link from "next/link";
 import { SafeImage } from "@/components/safe-image";
 import type { Card, CardSet, Game, Listing } from "@prisma/client";
@@ -5,9 +7,9 @@ import { formatPrice } from "@/lib/format";
 import { conditionLabels } from "@/lib/labels";
 import type { Dictionary } from "@/lib/i18n";
 
-type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game: Game }; t: Dictionary };
+type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game: Game }; t: Dictionary; locale: Locale };
 
-export function ListingCard({ listing: l, t }: Props) {
+export function ListingCard({ listing: l, t, locale }: Props) {
   // Sigillati senza foto: logo dell'espansione come segnaposto.
   const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall ?? (l.kind === "SEALED" ? l.set?.logoUrl : null);
   const isLogo = !!image && image === l.set?.logoUrl;
@@ -62,7 +64,7 @@ export function ListingCard({ listing: l, t }: Props) {
       </div>
       <div className="mt-2 space-y-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">{l.title}</p>
-        {l.set && <p className="text-xs text-black/50">{l.set.name}</p>}
+        {l.set && <p className="text-xs text-black/50">{setName(l.set, locale)}</p>}
         <p className="font-semibold">{formatPrice(l.priceCents)}</p>
       </div>
     </Link>

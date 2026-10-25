@@ -13,7 +13,7 @@ export type SealedTemplate = {
   images: string[]; // foto già caricate su un prodotto uguale (riusabili)
 };
 
-type SetInfo = { name: string; series: string | null; releaseDate: Date | null; logoUrl: string | null };
+type SetInfo = { name: string; nameIt?: string | null; series: string | null; releaseDate: Date | null; logoUrl: string | null };
 
 type Existing = { sealedType: SealedType; title: string; images: string[] };
 
@@ -37,7 +37,7 @@ export function sealedTemplates(set: SetInfo, existing: Existing[] = []): Sealed
   ];
   return items.map(([key, sealedType, label]) => {
     const base = label.replace(/ \(.*\)$/, "");
-    const title = key === "other" ? "" : `${base} ${set.name}`;
+    const title = key === "other" ? "" : `${base} ${set.nameIt ?? set.name}`;
     // Foto di un prodotto uguale già in catalogo: stesso titolo proposto, altrimenti stesso tipo.
     const match =
       existing.find((e) => e.images.length > 0 && e.title.toLowerCase().startsWith(base.toLowerCase()) && e.sealedType === sealedType) ??

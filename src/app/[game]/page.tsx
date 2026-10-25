@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Condition, ListingKind, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ListingCard } from "@/components/listing-card";
+import { setName } from "@/lib/set-name";
 import { FilterForm } from "@/components/filter-form";
 import { conditionLabels } from "@/lib/labels";
 import { getT } from "@/lib/i18n";
@@ -51,7 +52,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 }
 
 export default async function GamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<Search> }) {
-  const [{ game: slug }, sp, { t }] = await Promise.all([params, searchParams, getT()]);
+  const [{ game: slug }, sp, { locale, t }] = await Promise.all([params, searchParams, getT()]);
   const { tipo, set, lingua, cond, q } = sp;
   const ordina: SortKey = sp.ordina && sp.ordina in sorts ? (sp.ordina as SortKey) : "recenti";
   const min = euroToCents(sp.min);
@@ -73,6 +74,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
           { title: { contains: q, mode: "insensitive" } },
           { card: { name: { contains: q, mode: "insensitive" } } },
           { set: { name: { contains: q, mode: "insensitive" } } },
+          { set: { nameIt: { contains: q, mode: "insensitive" } } },
         ]
       : undefined,
   };
@@ -83,7 +85,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
     // Solo le espansioni e le lingue che hanno prodotti in vendita.
     db.cardSet.findMany({
       where: { listings: { some: base } },
-      select: { slug: true, name: true },
+      select: { slug: true, name: true, nameIt: true },
       orderBy: { releaseDate: "desc" },
     }),
     db.listing.findMany({ where: base, distinct: ["language"], select: { language: true } }),
@@ -104,7 +106,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
   };
 
   const chips: { label: string; href: string }[] = [
-    set && { label: sets.find((s) => s.slug === set)?.name ?? set, href: query({ set: undefined }) },
+    set && { label: setName(sets.find((s) => s.slug === set), locale) || set, href: query({ set: undefined }) },
     lingua && { label: t.languages[lingua as keyof typeof t.languages] ?? lingua, href: query({ lingua: undefined }) },
     cond && { label: conditionLabels[cond as Condition] ?? cond, href: query({ cond: undefined }) },
     sp.min && { label: `${t.catalog.from} ${sp.min} €`, href: query({ min: undefined }) },
@@ -157,7 +159,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
             <select name="set" defaultValue={set ?? ""} className={`${field} col-span-2`}>
               <option value="">{t.catalog.allSets}</option>
               {sets.map((s) => (
-                <option key={s.slug} value={s.slug}>{s.name}</option>
+                <option key={s.slug} value={s.slug}>{setName(s, locale)}</option>
               ))}
             </select>
             <select name="lingua" defaultValue={lingua ?? ""} className={field}>
@@ -206,7 +208,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
           {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} t={t} />
+            <ListingCard key={l.id} listing={l} t={t} locale={locale} />
           ))}
         </div>
       )}
@@ -216,7 +218,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
           <p className="text-sm text-black/60">{t.catalog.soldOutText}</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {soldOut.map((l) => (
-              <ListingCard key={l.id} listing={l} t={t} />
+              <ListingCard key={l.id} listing={l} t={t} locale={locale} />
             ))}
           </div>
         </section>

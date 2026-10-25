@@ -2,6 +2,8 @@
 import type { PrismaClient } from "@prisma/client";
 
 const API = process.env.TCGDEX_API ?? "https://api.tcgdex.net/v2/en";
+// Stessa API in italiano: stessi id, nomi tradotti (non tutte le espansioni sono tradotte).
+const API_IT = API.replace(/\/en$/, "/it");
 const CONCURRENCY = 8;
 const TIME_BUDGET_MS = 40_000; // l'azione admin ha 60 s: ci fermiamo prima e si riprende al clic successivo
 const FRESH_MS = 12 * 60 * 60 * 1000; // carte scaricate nelle ultime 12 ore non vengono richieste di nuovo
@@ -64,11 +66,11 @@ async function pocketIds(): Promise<Set<string>> {
   return new Set(serie?.sets?.map((s) => s.id) ?? []);
 }
 
-async function get<T>(path: string): Promise<T> {
+async function get<T>(path: string, base = API): Promise<T> {
   let last = "";
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(`${API}${path}`, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`${base}${path}`, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (res.ok) return res.json();
       last = String(res.status);
       if (res.status === 404) throw new Error(`TCGdex: ${path} non trovato`);
@@ -103,7 +105,13 @@ export type ImportOptions = { deadline?: number }; // istante (ms) oltre il qual
 export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = {}) {
   const deadline = opts.deadline ?? Date.now() + TIME_BUDGET_MS;
   const gameId = await pokemonGameId(db);
-  const [all, pocket] = await Promise.all([get<SetResume[]>("/sets"), pocketIds()]);
+  const [all, pocket, allIt] = await Promise.all([
+    get<SetResume[]>("/sets"),
+    pocketIds(),
+    API_IT === API ? [] : get<SetResume[]>("/sets", API_IT).catch(() => [] as SetResume[]),
+  ]);
+  // Nome italiano per id; se TCGdex non l'ha tradotto restituisce quello inglese, che non salviamo.
+  const nameIt = new Map(allIt.filter((s) => s.name && s.name !== all.find((e) => e.id === s.id)?.name).map((s) => [s.id, s.name]));
   const isPocket = (id: string) => pocket.has(id) || looksPocket(id);
   const remote = all.filter((r) => !isPocket(r.id));
   const existing = await db.cardSet.findMany({
@@ -111,6 +119,7 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
     select: {
       id: true,
       name: true,
+      nameIt: true,
       slug: true,
       externalId: true,
       tcgdexId: true,
@@ -186,6 +195,7 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
             where: { id: old.id },
             data: {
               tcgdexId: r.id,
+              nameIt: nameIt.get(r.id) ?? old.nameIt ?? known.nameIt,
               logoUrl: old.logoUrl ?? known.logoUrl ?? assets.logoUrl,
               symbolUrl: old.symbolUrl ?? known.symbolUrl ?? assets.symbolUrl,
               series: old.series ?? known.series,
@@ -202,6 +212,7 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
           db.cardSet.update({
             where: { id: known.id },
             data: {
+              nameIt: nameIt.get(r.id) ?? known.nameIt ?? old.nameIt,
               logoUrl: known.logoUrl ?? old.logoUrl ?? assets.logoUrl,
               symbolUrl: known.symbolUrl ?? old.symbolUrl ?? assets.symbolUrl,
               series: known.series ?? old.series,
@@ -216,7 +227,9 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
     }
     if (known) {
       // Loghi e simboli TCGdex solo dove mancano: quelli gia' presenti (vecchia API) restano, perche' su TCGdex non tutti esistono.
+      const it = nameIt.get(r.id);
       const data = {
+        ...(it && it !== known.nameIt ? { nameIt: it } : {}),
         ...(known.logoUrl || !assets.logoUrl ? {} : { logoUrl: assets.logoUrl }),
         ...(known.symbolUrl || !assets.symbolUrl ? {} : { symbolUrl: assets.symbolUrl }),
       };
@@ -227,7 +240,7 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
       ops.push(
         db.cardSet.update({
           where: { id: old.id },
-          data: { tcgdexId: r.id, logoUrl: old.logoUrl ?? assets.logoUrl, symbolUrl: old.symbolUrl ?? assets.symbolUrl },
+          data: { tcgdexId: r.id, nameIt: nameIt.get(r.id) ?? old.nameIt, logoUrl: old.logoUrl ?? assets.logoUrl, symbolUrl: old.symbolUrl ?? assets.symbolUrl },
         }),
       );
       linked++;
@@ -258,6 +271,7 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
         tcgdexId: r.id,
         slug: slugs.has(r.id.toLowerCase()) ? `tcgdex-${r.id}` : r.id,
         name: r.name,
+        nameIt: nameIt.get(r.id) ?? null,
         series: d?.serie?.name ?? null,
         releaseDate: d?.releaseDate ? new Date(d.releaseDate) : null,
         ...tcgdexAssets(r),

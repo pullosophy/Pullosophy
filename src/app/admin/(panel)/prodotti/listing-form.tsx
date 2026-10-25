@@ -6,7 +6,7 @@ import { conditionLabels, languageLabels, sealedLabels } from "@/lib/labels";
 import { ImageUploader } from "./image-uploader";
 import { SafeImage } from "@/components/safe-image";
 
-type Option = { id: string; name: string };
+type Option = { id: string; name: string; nameIt?: string | null };
 type CardOption = {
   id: string;
   name: string;
@@ -118,7 +118,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
         <select name="setId" value={setId} onChange={(e) => { setSetId(e.target.value); setCardId(""); setSealedKey(""); }} className={field}>
           <option value="">—</option>
           {sets.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
+            <option key={s.id} value={s.id}>{s.nameIt && s.nameIt !== s.name ? `${s.nameIt} (${s.name})` : s.name}</option>
           ))}
         </select>
       </label>
