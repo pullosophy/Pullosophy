@@ -1,7 +1,8 @@
 import type { OrderStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
-import { updateOrder } from "@/app/actions/admin";
+import { resendShippingEmail, updateOrder } from "@/app/actions/admin";
+import { SubmitButton } from "../submit-button";
 
 const statusLabels: Record<OrderStatus, string> = {
   PENDING: "In attesa di pagamento",
@@ -26,7 +27,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">Ordini</h1>
       {ok && (
-        <p className={`rounded px-3 py-2 text-sm ${ok.includes("NON") || ok.includes("mancante") ? "bg-red-600/15" : "bg-green-600/15"}`}>{ok}</p>
+        <p className={`rounded px-3 py-2 text-sm ${ok.includes("NON") ? "bg-red-600/15" : "bg-green-600/15"}`}>{ok}</p>
       )}
       <p className="text-sm opacity-70">
         Il cliente riceve una email di conferma al pagamento e una di spedizione quando metti lo stato su “Spedito” (con il tracking se inserito).
@@ -73,8 +74,14 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 placeholder="Codice tracking"
                 className="rounded border border-black/20 bg-transparent px-2 py-1 text-sm"
               />
-              <button className="rounded border border-black/20 px-3 py-1 text-sm">Salva</button>
+              <SubmitButton pending="Salvo…">Salva</SubmitButton>
             </form>
+            {o.status === "SHIPPED" && (
+              <form action={resendShippingEmail}>
+                <input type="hidden" name="id" value={o.id} />
+                <SubmitButton pending="Invio…" variant="outline">Reinvia email di spedizione</SubmitButton>
+              </form>
+            )}
           </section>
         );
       })}
