@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { ADMIN_COOKIE, adminToken } from "@/lib/admin-auth";
-import { importPokemonCards, importPokemonSets } from "@/lib/pokemon-import";
+import { importPokemonCards, importPokemonSets } from "@/lib/tcgdex-import";
 import { sendEmail } from "@/lib/email";
 import { orderShippedEmail } from "@/lib/email-templates";
 import { notifyStockAlerts } from "@/app/actions/stock-alerts";
@@ -40,7 +40,8 @@ export async function importSets() {
   await requireAdmin();
   let message: string;
   try {
-    message = `${await importPokemonSets(db)} espansioni aggiornate`;
+    const r = await importPokemonSets(db);
+    message = `${r.total} espansioni su TCGdex: ${r.created} nuove, ${r.linked} collegate a quelle già presenti`;
   } catch (err) {
     message = `Errore: ${(err as Error).message}`;
   }
@@ -50,11 +51,14 @@ export async function importSets() {
 
 export async function importCards(formData: FormData) {
   await requireAdmin();
-  const externalId = z.string().min(1).parse(formData.get("externalId"));
+  const setId = z.string().min(1).parse(formData.get("setId"));
   let message: string;
   try {
-    const { setName, imported } = await importPokemonCards(db, externalId);
-    message = `${setName}: ${imported} carte importate`;
+    const r = await importPokemonCards(db, setId);
+    const done = r.imported + r.skipped;
+    message = r.partial
+      ? `${r.setName}: ${done} carte su ${r.total} aggiornate, premi di nuovo "Aggiorna carte" per continuare`
+      : `${r.setName}: ${r.total} carte aggiornate con i prezzi Cardmarket`;
   } catch (err) {
     message = `Errore: ${(err as Error).message}`;
   }
