@@ -4,9 +4,10 @@ import { formatPrice } from "@/lib/format";
 
 const kindLabels = { SINGLE: "Singola", SEALED: "Sigillato", GRADED: "Gradata" } as const;
 
-export default async function ProductsPage() {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
+  const { ok } = await searchParams;
   const listings = await db.listing.findMany({
-    include: { set: true, game: true },
+    include: { set: true, game: true, _count: { select: { stockAlerts: true } } },
     orderBy: { updatedAt: "desc" },
   });
   return (
@@ -17,6 +18,12 @@ export default async function ProductsPage() {
           + Nuovo prodotto
         </Link>
       </div>
+      {ok && (
+        <p className={`rounded px-3 py-2 text-sm ${ok.includes("NON") ? "bg-red-600/15" : "bg-green-600/15"}`}>{ok}</p>
+      )}
+      <p className="text-sm opacity-70">
+        Sui prodotti esauriti i clienti possono chiedere “Avvisami quando torna disponibile”: quando rimetti lo stock sopra zero e salvi, ricevono una email automatica.
+      </p>
       {listings.length === 0 ? (
         <p className="opacity-70">Nessun prodotto ancora.</p>
       ) : (
@@ -31,7 +38,14 @@ export default async function ProductsPage() {
                     {l.set && ` · ${l.set.name}`} · {l.language.toUpperCase()}
                   </p>
                 </div>
-                <span className="text-sm">{l.stock} pz</span>
+                <span className="text-sm">
+                  {l.stock} pz
+                  {l._count.stockAlerts > 0 && (
+                    <span className="ml-2 rounded bg-brand/15 px-2 py-0.5 text-xs text-brand" title="Clienti in attesa dell'avviso">
+                      {l._count.stockAlerts} in attesa
+                    </span>
+                  )}
+                </span>
                 <span className="w-20 text-right text-sm">{formatPrice(l.priceCents)}</span>
                 <span className={`text-xs rounded px-2 py-0.5 ${l.published ? "bg-green-600/15" : "bg-black/10"}`}>
                   {l.published ? "Online" : "Bozza"}

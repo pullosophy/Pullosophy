@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/format";
 import { conditionLabels } from "@/lib/labels";
 import { getT, type Dictionary } from "@/lib/i18n";
 import { addToCart } from "@/app/actions/cart";
+import { RestockForm } from "@/components/restock-form";
 
 export const dynamic = "force-dynamic";
 
@@ -166,7 +167,10 @@ export default async function ListingPage({ params }: Params) {
             </button>
           </form>
         ) : (
-          <p className="rounded-full bg-muted px-6 py-3 text-center font-semibold">{t.product.soldOut}</p>
+          <div className="space-y-3">
+            <p className="rounded-full bg-muted px-6 py-3 text-center font-semibold">{t.product.soldOut}</p>
+            <RestockForm listingId={listing.id} labels={t.product.restock} />
+          </div>
         )}
       </div>
     </div>
