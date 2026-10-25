@@ -72,7 +72,7 @@ const listingSchema = z
     language: z.string().min(2),
     condition: optional(z.enum(["MINT", "NEAR_MINT", "EXCELLENT", "GOOD", "LIGHT_PLAYED", "PLAYED", "POOR"])),
     sealedType: optional(
-      z.enum(["BOOSTER_PACK", "BOOSTER_BOX", "ELITE_TRAINER_BOX", "COLLECTION_BOX", "TIN", "BUNDLE", "OTHER"]),
+      z.enum(["BOOSTER_PACK", "BOOSTER_BOX", "ELITE_TRAINER_BOX", "COLLECTION_BOX", "TIN", "BUNDLE", "BLISTER", "BUILD_BATTLE", "OTHER"]),
     ),
     grader: optional(z.enum(["PSA", "BGS", "CGC", "OTHER"])),
     grade: optional(z.coerce.number().min(1).max(10)),

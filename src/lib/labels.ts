@@ -17,6 +17,8 @@ export const sealedLabels: Record<SealedType, string> = {
   COLLECTION_BOX: "Collezione",
   TIN: "Tin",
   BUNDLE: "Bundle",
+  BLISTER: "Blister",
+  BUILD_BATTLE: "Build & Battle",
   OTHER: "Altro",
 };
 

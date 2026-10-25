@@ -7,7 +7,8 @@ import type { Dictionary } from "@/lib/i18n";
 type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game: Game }; t: Dictionary };
 
 export function ListingCard({ listing: l, t }: Props) {
-  const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall;
+  // Sigillati senza foto: logo dell'espansione come segnaposto.
+  const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall ?? (l.kind === "SEALED" ? l.set?.logoUrl : null);
   const badge =
     l.kind === "GRADED"
       ? `${l.grader} ${l.grade}`
