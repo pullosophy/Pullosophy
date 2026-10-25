@@ -37,6 +37,14 @@ Webhook Stripe: in Stripe → Developers → Webhooks aggiungi `https://<dominio
 con gli eventi `checkout.session.completed` e `checkout.session.expired`, poi copia il signing secret
 in `STRIPE_WEBHOOK_SECRET`.
 
+## Email
+
+Le email (conferma ordine al pagamento, avviso di spedizione dall'admin, codice sconto all'iscrizione)
+partono tramite [Resend](https://resend.com): crea un account, genera una API key e mettila in `RESEND_API_KEY`.
+Per scrivere ai clienti serve un dominio verificato su Resend (Domains → Add domain, poi i record DNS):
+a quel punto imposta `EMAIL_FROM="Pullosophy <ordini@tuodominio.it>"`. Senza dominio, Resend consegna
+solo all'email del proprietario dell'account (utile per provare).
+
 ## Pannello admin
 
 `/admin`, protetto dalla password `ADMIN_PASSWORD`. Per caricare foto dal pannello serve Vercel Blob: Vercel → Storage → Create → Blob, collegato al progetto (aggiunge `BLOB_READ_WRITE_TOKEN` da solo). Da lì:

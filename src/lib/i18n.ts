@@ -128,7 +128,7 @@ const it = {
   },
   thanks: {
     title: "Grazie per l'ordine!",
-    text: "Riceverai una email di conferma da Stripe. Ti scriveremo quando l'ordine sarà spedito.",
+    text: "Ti abbiamo inviato una email di conferma. Ti scriveremo di nuovo quando l'ordine sarà spedito.",
     orderNumber: "Numero ordine:",
     back: "Torna al negozio",
   },
@@ -328,7 +328,7 @@ const en: Dictionary = {
   },
   thanks: {
     title: "Thank you for your order!",
-    text: "You'll receive a confirmation email from Stripe. We'll write to you when your order ships.",
+    text: "We've sent you a confirmation email. We'll write again when your order ships.",
     orderNumber: "Order number:",
     back: "Back to the shop",
   },

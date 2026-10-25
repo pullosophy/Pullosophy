@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { cartLines, writeCart } from "@/lib/cart";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
+import { getLocale } from "@/lib/i18n";
 
 const schema = z.object({ country: z.string().length(2), email: z.email() });
 
@@ -24,6 +25,7 @@ export async function startCheckout(formData: FormData) {
   const order = await db.order.create({
     data: {
       email,
+      locale: await getLocale(),
       subtotalCents,
       shippingCents,
       totalCents: subtotalCents + shippingCents,

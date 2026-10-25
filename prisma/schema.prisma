@@ -141,6 +141,7 @@ model Order {
   shippingCountry String?
   shippingAddress Json?
   trackingNumber  String?
+  locale          String      @default("it") // lingua del cliente per le email
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
