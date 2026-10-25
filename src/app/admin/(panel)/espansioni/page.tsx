@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { importCards, importSets, linkSet } from "@/app/actions/admin";
 import { SubmitButton } from "../submit-button";
+import { SafeImage } from "@/components/safe-image";
 
 export const maxDuration = 60;
 
@@ -39,8 +40,13 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         <ul className="divide-y divide-black/10">
           {sets.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {s.symbolUrl && <img src={s.symbolUrl} alt="" className="h-5 w-5 object-contain" />}
+              <span className="grid h-6 w-6 shrink-0 place-items-center">
+                {s.symbolUrl ? (
+                  <SafeImage src={s.symbolUrl} alt="" className="h-5 w-5 object-contain" fallback={<span className="h-2 w-2 rounded-full bg-black/15" />} />
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-black/15" />
+                )}
+              </span>
               <div className="flex-1">
                 <p className="font-medium">{s.name}</p>
                 <p className="text-xs opacity-60">
