@@ -28,6 +28,39 @@ type CardDetail = CardResume & {
 const cents = (v?: number | null) => (typeof v === "number" && v > 0 ? Math.round(v * 100) : null);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+// Parole che non distinguono un'espansione dall'altra ("Pokémon Futsal Collection" e "Pokémon Futsal 2020" sono la stessa).
+const GENERIC = new Set(["pokemon", "set", "the", "tcg", "edition", "and", "of"]);
+const tokens = (s: string) =>
+  new Set(
+    s
+      .toLowerCase()
+      .replace(/é/g, "e")
+      .split(/[^a-z0-9]+/)
+      .filter((t) => t && !GENERIC.has(t) && !/^(19|20)\d\d$/.test(t)),
+  );
+const subset = (a: Set<string>, b: Set<string>) => a.size > 0 && [...a].every((t) => b.has(t));
+// Quanto si somigliano due nomi: 1 = uguali, 0 = niente in comune. Un nome contenuto nell'altro conta per le parole in comune.
+function similarity(a: string, b: string) {
+  const na = norm(a);
+  const nb = norm(b);
+  if (na === nb) return 1;
+  const ta = tokens(a);
+  const tb = tokens(b);
+  const contained = (na.length >= 5 && nb.length >= 5 && (na.includes(nb) || nb.includes(na))) || subset(ta, tb) || subset(tb, ta);
+  if (!contained) return 0;
+  const union = new Set([...ta, ...tb]);
+  return [...ta].filter((t) => tb.has(t)).length / Math.max(union.size, 1);
+}
+
+// Pokémon TCG Pocket e' il gioco per telefono: su TCGdex ha la serie "tcgp" e codici come A1, A1a, B2a, P-A.
+// Non si vendono carte fisiche, quindi non va nel catalogo.
+const POCKET_SERIES = "tcgp";
+const looksPocket = (id: string) => /^(?:[A-Z]\d+[a-z]?|P-[A-Z]+)$/.test(id);
+async function pocketIds(): Promise<Set<string>> {
+  const serie = await get<{ sets?: { id: string }[] }>(`/series/${POCKET_SERIES}`).catch(() => null);
+  return new Set(serie?.sets?.map((s) => s.id) ?? []);
+}
+
 async function get<T>(path: string): Promise<T> {
   let last = "";
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -65,60 +98,133 @@ async function pokemonGameId(db: PrismaClient) {
 export async function importPokemonSets(db: PrismaClient) {
   const started = Date.now();
   const gameId = await pokemonGameId(db);
-  const remote = await get<SetResume[]>("/sets");
+  const [all, pocket] = await Promise.all([get<SetResume[]>("/sets"), pocketIds()]);
+  const isPocket = (id: string) => pocket.has(id) || looksPocket(id);
+  const remote = all.filter((r) => !isPocket(r.id));
   const existing = await db.cardSet.findMany({
     where: { gameId },
-    select: { id: true, name: true, slug: true, externalId: true, tcgdexId: true, logoUrl: true, symbolUrl: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      externalId: true,
+      tcgdexId: true,
+      logoUrl: true,
+      symbolUrl: true,
+      series: true,
+      releaseDate: true,
+      _count: { select: { cards: true, listings: true } },
+    },
   });
+  type Existing = (typeof existing)[number];
+  const empty = (s: Existing) => s._count.cards === 0 && s._count.listings === 0;
   const byTcgdex = new Map(existing.filter((s) => s.tcgdexId).map((s) => [s.tcgdexId!, s]));
   const unlinked = existing.filter((s) => !s.tcgdexId);
-  const byName = new Map(unlinked.map((s) => [norm(s.name), s]));
   // Stesso codice nelle due fonti (es. "sv10", "me01"): e' la stessa espansione anche se il nome e' scritto diversamente.
-  const byCode = new Map<string, (typeof existing)[number]>();
+  const byCode = new Map<string, Existing>();
   for (const s of unlinked) {
     if (s.externalId) byCode.set(s.externalId.toLowerCase(), s);
     byCode.set(s.slug.toLowerCase(), s);
   }
   const slugs = new Set(existing.map((s) => s.slug.toLowerCase()));
-  const used = new Set(byTcgdex.keys());
   const tcgdexAssets = (r: SetResume) => ({
     logoUrl: r.logo ? `${r.logo}.png` : null,
     symbolUrl: r.symbol ? `${r.symbol}.png` : null,
   });
-
-  const updates: { id: string; data: { tcgdexId?: string; logoUrl?: string | null; symbolUrl?: string | null } }[] = [];
+  const ops: ReturnType<PrismaClient["cardSet"]["update" | "delete"]>[] = [];
   const toCreate: SetResume[] = [];
   let linked = 0;
+  let merged = 0;
+  let removed = 0;
+
+  // Espansioni Pocket create nei giri precedenti: via, se vuote.
+  for (const s of existing) {
+    if (s.tcgdexId && isPocket(s.tcgdexId) && empty(s)) {
+      ops.push(db.cardSet.delete({ where: { id: s.id } }));
+      removed++;
+    }
+  }
+
+  // Abbinamento tra espansioni TCGdex e quelle vecchie non ancora collegate: prima la coppia che si somiglia di piu',
+  // ognuna usata una volta sola (cosi' "30th Celebration" non si prende "30th Celebration: Classic Collection").
+  // Stesso codice = stessa espansione anche se il nome e' scritto in modo diverso.
+  const pairs: { r: SetResume; s: Existing; score: number }[] = [];
+  for (const r of remote) {
+    const code = byCode.get(r.id.toLowerCase());
+    for (const s of unlinked) {
+      const score = s === code ? 2 : similarity(r.name, s.name);
+      if (score > 0) pairs.push({ r, s, score });
+    }
+  }
+  pairs.sort((a, b) => b.score - a.score);
+  const matched = new Map<string, Existing>(); // tcgdexId -> vecchia espansione
+  const takenOld = new Set<string>();
+  for (const p of pairs) {
+    if (matched.has(p.r.id) || takenOld.has(p.s.id)) continue;
+    // Un nome simile ma non uguale vale solo se non ci sono altre candidate altrettanto plausibili.
+    if (p.score < 1 && pairs.some((q) => q !== p && q.score === p.score && !matched.has(q.r.id) && !takenOld.has(q.s.id) && (q.r.id === p.r.id || q.s.id === p.s.id))) continue;
+    matched.set(p.r.id, p.s);
+    takenOld.add(p.s.id);
+  }
+
   for (const r of remote) {
     const assets = tcgdexAssets(r);
-    // Loghi e simboli TCGdex solo dove mancano: quelli gia' presenti (vecchia API) restano, perche' su TCGdex non tutti esistono.
     const known = byTcgdex.get(r.id);
+    const old = matched.get(r.id);
+    if (known && old) {
+      // Doppione: TCGdex l'ha creata con un altro nome (es. "30th Classic Collection") mentre la vecchia
+      // ("30th Celebration: Classic Collection") e' rimasta scollegata. Teniamo quella con le carte.
+      if (empty(known)) {
+        ops.push(
+          db.cardSet.delete({ where: { id: known.id } }),
+          db.cardSet.update({
+            where: { id: old.id },
+            data: {
+              tcgdexId: r.id,
+              logoUrl: old.logoUrl ?? known.logoUrl ?? assets.logoUrl,
+              symbolUrl: old.symbolUrl ?? known.symbolUrl ?? assets.symbolUrl,
+              series: old.series ?? known.series,
+              releaseDate: old.releaseDate ?? known.releaseDate,
+            },
+          }),
+        );
+        merged++;
+        continue;
+      }
+      if (empty(old)) {
+        ops.push(
+          db.cardSet.delete({ where: { id: old.id } }),
+          db.cardSet.update({
+            where: { id: known.id },
+            data: {
+              logoUrl: known.logoUrl ?? old.logoUrl ?? assets.logoUrl,
+              symbolUrl: known.symbolUrl ?? old.symbolUrl ?? assets.symbolUrl,
+              series: known.series ?? old.series,
+              releaseDate: known.releaseDate ?? old.releaseDate,
+            },
+          }),
+        );
+        merged++;
+        continue;
+      }
+      // altrimenti hanno carte entrambe: le lasciamo, si uniscono a mano
+    }
     if (known) {
+      // Loghi e simboli TCGdex solo dove mancano: quelli gia' presenti (vecchia API) restano, perche' su TCGdex non tutti esistono.
       const data = {
         ...(known.logoUrl || !assets.logoUrl ? {} : { logoUrl: assets.logoUrl }),
         ...(known.symbolUrl || !assets.symbolUrl ? {} : { symbolUrl: assets.symbolUrl }),
       };
-      if (Object.keys(data).length) updates.push({ id: known.id, data });
+      if (Object.keys(data).length) ops.push(db.cardSet.update({ where: { id: known.id }, data }));
       continue;
     }
-    // Nome uguale, oppure un nome contenuto nell'altro (es. "Mega Evolution 30th Celebration" / "30th Celebration").
-    const rn = norm(r.name);
-    let match = byName.get(rn);
-    if (!match) {
-      const code = byCode.get(r.id.toLowerCase());
-      if (code && byName.has(norm(code.name))) match = code; // non ancora collegata in questo giro
-    }
-    if (!match && rn.length >= 5) {
-      const fuzzy = [...byName.entries()].filter(([n]) => n.length >= 5 && (n.includes(rn) || rn.includes(n)));
-      if (fuzzy.length === 1) match = fuzzy[0][1];
-    }
-    if (match && !used.has(r.id)) {
-      updates.push({
-        id: match.id,
-        data: { tcgdexId: r.id, logoUrl: match.logoUrl ?? assets.logoUrl, symbolUrl: match.symbolUrl ?? assets.symbolUrl },
-      });
-      byName.delete(norm(match.name));
-      used.add(r.id);
+    if (old) {
+      ops.push(
+        db.cardSet.update({
+          where: { id: old.id },
+          data: { tcgdexId: r.id, logoUrl: old.logoUrl ?? assets.logoUrl, symbolUrl: old.symbolUrl ?? assets.symbolUrl },
+        }),
+      );
       linked++;
       continue;
     }
@@ -126,7 +232,7 @@ export async function importPokemonSets(db: PrismaClient) {
   }
 
   // Tutti gli aggiornamenti in una transazione sola (un viaggio al database invece di centinaia).
-  if (updates.length) await db.$transaction(updates.map((u) => db.cardSet.update({ where: { id: u.id }, data: u.data })));
+  if (ops.length) await db.$transaction(ops);
 
   // Le nuove hanno bisogno del dettaglio per data di uscita e serie: in parallelo, entro il tempo massimo.
   let created = 0;
@@ -137,6 +243,10 @@ export async function importPokemonSets(db: PrismaClient) {
       return;
     }
     const d = await get<SetDetail>(`/sets/${encodeURIComponent(r.id)}`).catch(() => null);
+    if (d?.serie?.id === POCKET_SERIES || /pocket/i.test(d?.serie?.name ?? "")) {
+      created++; // non si vende: la saltiamo e basta
+      return;
+    }
     await db.cardSet.create({
       data: {
         gameId,
@@ -150,7 +260,7 @@ export async function importPokemonSets(db: PrismaClient) {
     });
     created++;
   });
-  return { total: remote.length, created, linked, partial: stopped, remaining: toCreate.length - created };
+  return { total: remote.length, created, linked, merged, removed, partial: stopped, remaining: toCreate.length - created };
 }
 
 // Carte di un'espansione con prezzi Cardmarket. Si ferma entro il tempo massimo e riprende al clic successivo.
@@ -190,7 +300,7 @@ export async function importPokemonCards(db: PrismaClient, setId: string) {
     const image = card.image ?? c.image;
     const fields = {
       name: card.name,
-      rarity: card.rarity ?? null,
+      rarity: card.rarity && card.rarity !== "None" ? card.rarity : null,
       supertype: card.category ?? null,
       ...(image ? { imageSmall: `${image}/low.webp`, imageLarge: `${image}/high.webp` } : {}),
       cmTrendCents: cents(cm?.trend ?? cm?.["trend-holo"]),

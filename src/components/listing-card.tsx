@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SafeImage } from "@/components/safe-image";
 import type { Card, CardSet, Game, Listing } from "@prisma/client";
 import { formatPrice } from "@/lib/format";
 import { conditionLabels } from "@/lib/labels";
@@ -17,22 +18,22 @@ export function ListingCard({ listing: l, t }: Props) {
         ? (l.sealedType && t.sealed[l.sealedType]) || t.product.sealed
         : l.condition && conditionLabels[l.condition];
 
+  const placeholder = (
+    <span className="absolute inset-0 grid place-items-center font-display text-3xl text-black/10">PULLOSOPHY</span>
+  );
   return (
     <Link href={`/${l.game.slug}/p/${l.id}`} className="group block">
       <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted">
-        {!image && (
-          <span className="absolute inset-0 grid place-items-center font-display text-3xl text-black/10">
-            PULLOSOPHY
-          </span>
-        )}
-        {image && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+        {image ? (
+          <SafeImage
             src={image}
             alt={l.title}
             loading="lazy"
             className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-[1.04]"
+            fallback={placeholder}
           />
+        ) : (
+          placeholder
         )}
         {badge && (
           <span
