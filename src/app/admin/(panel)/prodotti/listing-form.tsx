@@ -7,7 +7,7 @@ import { ImageUploader } from "./image-uploader";
 
 type Option = { id: string; name: string };
 type CardOption = { id: string; name: string; number: string; rarity: string | null; imageSmall: string | null };
-type SealedOption = { key: string; sealedType: string; label: string; title: string; image: string | null };
+type SealedOption = { key: string; sealedType: string; label: string; title: string; image: string | null; images: string[] };
 export type ListingValues = {
   id?: string;
   kind: "SINGLE" | "SEALED" | "GRADED";
@@ -181,7 +181,8 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {sealedPick?.image && <img src={sealedPick.image} alt="" className="mt-2 h-16 object-contain" />}
           <span className="mt-1 block text-xs opacity-60">
-            Senza foto caricate, nel negozio si vede il logo dell&apos;espansione.
+            Carica le foto del prodotto qui sotto: senza, nel negozio si vede il logo dell&apos;espansione. Le foto caricate
+            una volta vengono riproposte quando crei lo stesso prodotto (altra lingua, ristock).
           </span>
         </label>
       )}
@@ -231,7 +232,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
         </label>
       </div>
 
-      <ImageUploader initial={initial.images} />
+      <ImageUploader initial={initial.images} suggested={kind === "SEALED" ? (sealedPick?.images ?? []) : []} />
 
       <label className="flex items-center gap-2">
         <input type="checkbox" name="published" defaultChecked={initial.published} />
