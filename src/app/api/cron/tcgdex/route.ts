@@ -3,7 +3,7 @@
 // Lavora al massimo ~50 secondi (limite Vercel Hobby: 60) e riprende la notte dopo da dove era arrivato.
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { importPokemonCards, importPokemonSets } from "@/lib/tcgdex-import";
+import { importPokemonCards, importPokemonSets, isPocketSet } from "@/lib/tcgdex-import";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -26,15 +26,18 @@ export async function GET(req: Request) {
 
   // Ordine: prima chi ha prodotti pubblicati, poi chi ha carte piu' vecchie. Mai le espansioni ancora vuote
   // (quelle si importano dall'admin, con "Aggiorna tutte le carte").
-  const sets = await db.cardSet.findMany({
+  const all = await db.cardSet.findMany({
     where: { game: { slug: "pokemon" }, tcgdexId: { not: null }, cards: { some: {} } },
     select: {
       id: true,
       name: true,
+      tcgdexId: true,
+      series: true,
       _count: { select: { listings: { where: { published: true } } } },
       cards: { select: { syncedAt: true }, orderBy: { syncedAt: "asc" }, take: 1 },
     },
   });
+  const sets = all.filter((s) => !isPocketSet(s));
   const oldest = (s: (typeof sets)[number]) => s.cards[0]?.syncedAt?.getTime() ?? 0;
   sets.sort((a, b) => (b._count.listings > 0 ? 1 : 0) - (a._count.listings > 0 ? 1 : 0) || oldest(a) - oldest(b));
 

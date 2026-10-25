@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { ADMIN_COOKIE, adminToken } from "@/lib/admin-auth";
-import { importPokemonCards } from "@/lib/tcgdex-import";
+import { importPokemonCards, isPocketSet } from "@/lib/tcgdex-import";
 
 async function isAdmin() {
   const token = await adminToken();
@@ -15,11 +15,13 @@ async function isAdmin() {
 
 export async function listSetsToImport(): Promise<{ id: string; name: string }[]> {
   if (!(await isAdmin())) return [];
-  return db.cardSet.findMany({
+  const sets = await db.cardSet.findMany({
     where: { game: { slug: "pokemon" }, tcgdexId: { not: null } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, tcgdexId: true, series: true },
     orderBy: { releaseDate: "desc" },
   });
+  // Pokémon TCG Pocket (gioco per telefono) non si vende: niente carte da scaricare.
+  return sets.filter((s) => !isPocketSet(s)).map(({ id, name }) => ({ id, name }));
 }
 
 export type StepResult =

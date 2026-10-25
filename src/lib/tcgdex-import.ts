@@ -56,6 +56,9 @@ function similarity(a: string, b: string) {
 // Non si vendono carte fisiche, quindi non va nel catalogo.
 const POCKET_SERIES = "tcgp";
 const looksPocket = (id: string) => /^(?:[A-Z]\d+[a-z]?|P-[A-Z]+)$/.test(id);
+// Vale anche per espansioni gia' salvate: dal codice TCGdex o dal nome della serie.
+export const isPocketSet = (s: { tcgdexId: string | null; series: string | null }) =>
+  (!!s.tcgdexId && looksPocket(s.tcgdexId)) || /pocket/i.test(s.series ?? "");
 async function pocketIds(): Promise<Set<string>> {
   const serie = await get<{ sets?: { id: string }[] }>(`/series/${POCKET_SERIES}`).catch(() => null);
   return new Set(serie?.sets?.map((s) => s.id) ?? []);
@@ -133,16 +136,16 @@ export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = 
     logoUrl: r.logo ? `${r.logo}.png` : null,
     symbolUrl: r.symbol ? `${r.symbol}.png` : null,
   });
-  const ops: ReturnType<PrismaClient["cardSet"]["update" | "delete"]>[] = [];
+  const ops: (ReturnType<PrismaClient["cardSet"]["update" | "delete"]> | ReturnType<PrismaClient["card"]["deleteMany"]>)[] = [];
   const toCreate: SetResume[] = [];
   let linked = 0;
   let merged = 0;
   let removed = 0;
 
-  // Espansioni Pocket create nei giri precedenti: via, se vuote.
+  // Espansioni Pocket create nei giri precedenti: via, con le loro carte, purche' non ci siano prodotti in vendita.
   for (const s of existing) {
-    if (s.tcgdexId && isPocket(s.tcgdexId) && empty(s)) {
-      ops.push(db.cardSet.delete({ where: { id: s.id } }));
+    if (((s.tcgdexId && isPocket(s.tcgdexId)) || isPocketSet(s)) && s._count.listings === 0) {
+      ops.push(db.card.deleteMany({ where: { setId: s.id } }), db.cardSet.delete({ where: { id: s.id } }));
       removed++;
     }
   }
