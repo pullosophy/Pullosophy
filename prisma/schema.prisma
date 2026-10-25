@@ -79,6 +79,8 @@ enum SealedType {
   COLLECTION_BOX
   TIN
   BUNDLE
+  BLISTER
+  BUILD_BATTLE
   OTHER
 }
 

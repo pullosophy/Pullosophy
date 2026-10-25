@@ -7,6 +7,7 @@ import { ImageUploader } from "./image-uploader";
 
 type Option = { id: string; name: string };
 type CardOption = { id: string; name: string; number: string; rarity: string | null; imageSmall: string | null };
+type SealedOption = { key: string; sealedType: string; label: string; title: string; image: string | null };
 export type ListingValues = {
   id?: string;
   kind: "SINGLE" | "SEALED" | "GRADED";
@@ -35,6 +36,9 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
   const [cardId, setCardId] = useState(initial.cardId);
   const [title, setTitle] = useState(initial.title);
   const [cards, setCards] = useState<CardOption[]>([]);
+  const [sealedType, setSealedType] = useState(initial.sealedType);
+  const [sealed, setSealed] = useState<SealedOption[]>([]);
+  const [sealedKey, setSealedKey] = useState("");
 
   useEffect(() => {
     if (!setId) return setCards([]);
@@ -47,7 +51,20 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
     };
   }, [setId]);
 
+  // Lista dei sigillati standard dell'espansione (busta, box, ETB, ...).
+  useEffect(() => {
+    if (!setId) return setSealed([]);
+    let cancelled = false;
+    fetch(`/admin/sigillati?setId=${encodeURIComponent(setId)}`)
+      .then((r) => r.json())
+      .then((data: SealedOption[]) => !cancelled && setSealed(data));
+    return () => {
+      cancelled = true;
+    };
+  }, [setId]);
+
   const card = cards.find((c) => c.id === cardId);
+  const sealedPick = sealed.find((s) => s.key === sealedKey);
   const setName = sets.find((s) => s.id === setId)?.name;
 
   return (
@@ -82,7 +99,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
 
       <label className="block">
         <span className="text-sm opacity-70">Espansione</span>
-        <select name="setId" value={setId} onChange={(e) => { setSetId(e.target.value); setCardId(""); }} className={field}>
+        <select name="setId" value={setId} onChange={(e) => { setSetId(e.target.value); setCardId(""); setSealedKey(""); }} className={field}>
           <option value="">—</option>
           {sets.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
@@ -143,8 +160,36 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
 
       {kind === "SEALED" && (
         <label className="block">
+          <span className="text-sm opacity-70">Prodotto</span>
+          <select
+            value={sealedKey}
+            onChange={(e) => {
+              const pick = sealed.find((s) => s.key === e.target.value);
+              setSealedKey(e.target.value);
+              if (!pick) return;
+              setSealedType(pick.sealedType);
+              // Sovrascrive il titolo solo se vuoto o ancora quello proposto da una scelta precedente.
+              if (pick.title && (!title || sealed.some((s) => s.title === title))) setTitle(pick.title);
+            }}
+            className={field}
+          >
+            <option value="">{setId ? "— scegli dalla lista —" : "Prima scegli l'espansione"}</option>
+            {sealed.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {sealedPick?.image && <img src={sealedPick.image} alt="" className="mt-2 h-16 object-contain" />}
+          <span className="mt-1 block text-xs opacity-60">
+            Senza foto caricate, nel negozio si vede il logo dell&apos;espansione.
+          </span>
+        </label>
+      )}
+
+      {kind === "SEALED" && (
+        <label className="block">
           <span className="text-sm opacity-70">Tipo di sigillato</span>
-          <select name="sealedType" defaultValue={initial.sealedType} className={field}>
+          <select name="sealedType" value={sealedType} onChange={(e) => setSealedType(e.target.value)} className={field}>
             <option value="">—</option>
             {Object.entries(sealedLabels).map(([v, label]) => (
               <option key={v} value={v}>{label}</option>

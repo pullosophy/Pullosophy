@@ -207,7 +207,7 @@ const it = {
     errorGeneric: "Qualcosa è andato storto, riprova tra poco.",
   },
   // Etichette
-  sealed: { BOOSTER_PACK: "Busta", BOOSTER_BOX: "Booster Box", ELITE_TRAINER_BOX: "Elite Trainer Box", COLLECTION_BOX: "Collezione", TIN: "Tin", BUNDLE: "Bundle", OTHER: "Altro" },
+  sealed: { BOOSTER_PACK: "Busta", BOOSTER_BOX: "Booster Box", ELITE_TRAINER_BOX: "Elite Trainer Box", COLLECTION_BOX: "Collezione", TIN: "Tin", BUNDLE: "Bundle", BLISTER: "Blister", BUILD_BATTLE: "Build & Battle", OTHER: "Altro" },
   languages: { it: "Italiano", en: "Inglese", ja: "Giapponese", fr: "Francese", de: "Tedesco", es: "Spagnolo" },
 };
 
@@ -401,7 +401,7 @@ const en: Dictionary = {
     errorEmail: "Please check your email address.",
     errorGeneric: "Something went wrong, please try again shortly.",
   },
-  sealed: { BOOSTER_PACK: "Booster pack", BOOSTER_BOX: "Booster box", ELITE_TRAINER_BOX: "Elite Trainer Box", COLLECTION_BOX: "Collection box", TIN: "Tin", BUNDLE: "Bundle", OTHER: "Other" },
+  sealed: { BOOSTER_PACK: "Booster pack", BOOSTER_BOX: "Booster box", ELITE_TRAINER_BOX: "Elite Trainer Box", COLLECTION_BOX: "Collection box", TIN: "Tin", BUNDLE: "Bundle", BLISTER: "Blister", BUILD_BATTLE: "Build & Battle", OTHER: "Other" },
   languages: { it: "Italian", en: "English", ja: "Japanese", fr: "French", de: "German", es: "Spanish" },
 };
 

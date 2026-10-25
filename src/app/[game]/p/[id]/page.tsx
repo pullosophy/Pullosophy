@@ -23,7 +23,9 @@ const getListing = cache(async (game: string, id: string) => {
 });
 
 function listingImages(listing: NonNullable<Awaited<ReturnType<typeof getListing>>>) {
-  return listing.images.length > 0 ? listing.images : [listing.card?.imageLarge].filter((u): u is string => !!u);
+  if (listing.images.length > 0) return listing.images;
+  const fallback = listing.kind === "SEALED" ? listing.set?.logoUrl : listing.card?.imageLarge;
+  return fallback ? [fallback] : [];
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
