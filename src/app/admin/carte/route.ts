@@ -6,7 +6,18 @@ export async function GET(req: Request) {
   if (!setId) return Response.json([]);
   const cards = await db.card.findMany({
     where: { setId },
-    select: { id: true, name: true, number: true, rarity: true, imageSmall: true },
+    select: {
+      id: true,
+      name: true,
+      number: true,
+      rarity: true,
+      imageSmall: true,
+      cmTrendCents: true,
+      cmAvgCents: true,
+      cmLowCents: true,
+      cmUrl: true,
+      cmUpdatedAt: true,
+    },
   });
   cards.sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
   return Response.json(cards);

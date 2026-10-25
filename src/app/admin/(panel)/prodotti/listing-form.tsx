@@ -6,7 +6,19 @@ import { conditionLabels, languageLabels, sealedLabels } from "@/lib/labels";
 import { ImageUploader } from "./image-uploader";
 
 type Option = { id: string; name: string };
-type CardOption = { id: string; name: string; number: string; rarity: string | null; imageSmall: string | null };
+type CardOption = {
+  id: string;
+  name: string;
+  number: string;
+  rarity: string | null;
+  imageSmall: string | null;
+  cmTrendCents: number | null;
+  cmAvgCents: number | null;
+  cmLowCents: number | null;
+  cmUrl: string | null;
+  cmUpdatedAt: string | null;
+};
+const eur = (c: number) => (c / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 type SealedOption = { key: string; sealedType: string; label: string; title: string; image: string | null; images: string[] };
 export type ListingValues = {
   id?: string;
@@ -35,6 +47,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
   const [setId, setSetId] = useState(initial.setId);
   const [cardId, setCardId] = useState(initial.cardId);
   const [title, setTitle] = useState(initial.title);
+  const [price, setPrice] = useState(initial.price);
   const [cards, setCards] = useState<CardOption[]>([]);
   const [sealedType, setSealedType] = useState(initial.sealedType);
   const [sealed, setSealed] = useState<SealedOption[]>([]);
@@ -123,12 +136,35 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
             <option value="">{setId && cards.length === 0 ? "Nessuna carta: importale da Espansioni" : "—"}</option>
             {cards.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.number} · {c.name}{c.rarity ? ` (${c.rarity})` : ""}
+                {c.number} · {c.name}{c.rarity ? ` (${c.rarity})` : ""}{c.cmTrendCents ? ` · CM ${eur(c.cmTrendCents)}` : ""}
               </option>
             ))}
           </select>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {card?.imageSmall && <img src={card.imageSmall} alt={card.name} className="mt-2 h-40 rounded" />}
+          <div className="mt-2 flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {card?.imageSmall && <img src={card.imageSmall} alt={card.name} className="h-40 rounded" />}
+            {card?.cmTrendCents && (
+              <div className="rounded-lg border border-black/10 bg-black/[0.03] p-3 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-60">Cardmarket (Near Mint)</p>
+                <p>Trend <strong>{eur(card.cmTrendCents)}</strong></p>
+                {card.cmAvgCents && <p>Media vendite {eur(card.cmAvgCents)}</p>}
+                {card.cmLowCents && <p>Minimo {eur(card.cmLowCents)}</p>}
+                <button
+                  type="button"
+                  onClick={() => setPrice((card.cmTrendCents! / 100).toFixed(2))}
+                  className="mt-2 rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-white"
+                >
+                  Usa il trend come prezzo
+                </button>
+                <p className="mt-2 text-xs opacity-60">
+                  {card.cmUpdatedAt && `Aggiornato ${new Date(card.cmUpdatedAt).toLocaleDateString("it-IT")}. `}
+                  {card.cmUrl && (
+                    <a href={card.cmUrl} target="_blank" rel="noopener noreferrer" className="underline">Apri su Cardmarket</a>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
         </label>
       )}
 
@@ -224,7 +260,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
           <span className="text-sm opacity-70">Prezzo (€, IVA inclusa)</span>
-          <input name="price" type="number" step="0.01" min="0.01" defaultValue={initial.price} required className={field} />
+          <input name="price" type="number" step="0.01" min="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required className={field} />
         </label>
         <label className="block">
           <span className="text-sm opacity-70">Quantità</span>

@@ -17,7 +17,14 @@ type ApiCard = {
   rarity?: string;
   supertype: string;
   images: { small: string; large: string };
+  cardmarket?: {
+    url: string;
+    updatedAt: string; // "2026/10/25"
+    prices?: { averageSellPrice?: number; lowPrice?: number; trendPrice?: number };
+  };
 };
+
+const cents = (v?: number) => (typeof v === "number" && v > 0 ? Math.round(v * 100) : null);
 
 async function get<T>(path: string): Promise<{ data: T[]; totalCount: number }> {
   const headers: Record<string, string> = process.env.POKEMONTCG_API_KEY
@@ -79,6 +86,11 @@ export async function importPokemonCards(db: PrismaClient, externalSetId: string
           supertype: c.supertype,
           imageSmall: c.images.small,
           imageLarge: c.images.large,
+          cmTrendCents: cents(c.cardmarket?.prices?.trendPrice),
+          cmAvgCents: cents(c.cardmarket?.prices?.averageSellPrice),
+          cmLowCents: cents(c.cardmarket?.prices?.lowPrice),
+          cmUrl: c.cardmarket?.url ?? null,
+          cmUpdatedAt: c.cardmarket?.updatedAt ? new Date(c.cardmarket.updatedAt.replaceAll("/", "-")) : null,
         };
         return db.card.upsert({
           where: { externalId: c.id },
