@@ -12,7 +12,14 @@ export async function subscribe(_prev: SubscribeState, formData: FormData): Prom
   if (!parsed.success) return { error: "email" };
   try {
     const locale = await getLocale();
-    await db.subscriber.upsert({ where: { email: parsed.data }, update: {}, create: { email: parsed.data, locale } });
+    const newReleases = formData.get("newReleases") === "on";
+    const interests = formData.getAll("interests").map(String).filter((g) => ["pokemon", "one-piece"].includes(g));
+    const prefs = { newReleases, interests };
+    await db.subscriber.upsert({
+      where: { email: parsed.data },
+      update: prefs,
+      create: { email: parsed.data, locale, ...prefs },
+    });
     // Il codice sconto esiste su Stripe; se Stripe non risponde l'iscrizione resta valida.
     await ensureWelcomeCode().catch((err) => console.error("[newsletter] Stripe promo code:", err));
     return { ok: true, code: WELCOME_CODE };
