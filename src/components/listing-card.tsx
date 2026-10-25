@@ -9,6 +9,7 @@ type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game
 export function ListingCard({ listing: l, t }: Props) {
   // Sigillati senza foto: logo dell'espansione come segnaposto.
   const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall ?? (l.kind === "SEALED" ? l.set?.logoUrl : null);
+  const preorder = !!l.releaseDate && l.releaseDate.getTime() > Date.now();
   const badge =
     l.kind === "GRADED"
       ? `${l.grader} ${l.grade}`
@@ -45,6 +46,11 @@ export function ListingCard({ listing: l, t }: Props) {
         <span className="absolute right-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase">
           {l.language}
         </span>
+        {preorder && (
+          <span className="absolute bottom-2 left-2 rounded bg-brand px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white">
+            {t.product.preorder}
+          </span>
+        )}
       </div>
       <div className="mt-2 space-y-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">{l.title}</p>

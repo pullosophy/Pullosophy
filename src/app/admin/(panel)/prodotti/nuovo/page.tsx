@@ -25,6 +25,7 @@ export default async function NewListingPage() {
           stock: "1",
           images: "",
           published: true,
+          releaseDate: "",
         }}
       />
     </div>

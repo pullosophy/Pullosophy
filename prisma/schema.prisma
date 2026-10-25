@@ -111,6 +111,7 @@ model Listing {
   stock      Int         @default(0)
   images     String[] // foto reali (obbligatorie per le gradate)
   published  Boolean     @default(false)
+  releaseDate DateTime? // preordine: data di uscita (se futura, il prodotto e' "In arrivo")
   orderItems OrderItem[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

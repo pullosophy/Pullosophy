@@ -30,6 +30,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
           stock: String(listing.stock),
           images: listing.images.join("\n"),
           published: listing.published,
+          releaseDate: listing.releaseDate?.toISOString().slice(0, 10) ?? "",
         }}
       />
     </div>
