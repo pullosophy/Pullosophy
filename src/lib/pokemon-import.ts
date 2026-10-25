@@ -26,17 +26,29 @@ type ApiCard = {
 
 const cents = (v?: number) => (typeof v === "number" && v > 0 ? Math.round(v * 100) : null);
 
+const PAGE_SIZE = 100;
+
 async function get<T>(path: string): Promise<{ data: T[]; totalCount: number }> {
   const headers: Record<string, string> = process.env.POKEMONTCG_API_KEY
     ? { "X-Api-Key": process.env.POKEMONTCG_API_KEY }
     : {};
-  // L'API pubblica risponde spesso 5xx senza chiave: qualche tentativo con attesa crescente.
-  for (let attempt = 1; ; attempt++) {
-    const res = await fetch(`${API}${path}`, { headers, cache: "no-store" });
-    if (res.ok) return res.json();
-    if (res.status < 500 || attempt === 3) throw new Error(`Pokémon TCG API: ${res.status} ${path}`);
-    await new Promise((r) => setTimeout(r, 1000 * attempt));
+  // L'API pubblica risponde spesso 5xx (soprattutto senza chiave): fino a 4 tentativi con attesa crescente.
+  let last = "";
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const res = await fetch(`${API}${path}`, { headers, cache: "no-store", signal: AbortSignal.timeout(10_000) });
+      if (res.ok) return res.json();
+      last = `${res.status}`;
+      if (res.status < 500 && res.status !== 429) break;
+    } catch (err) {
+      last = err instanceof Error && err.name === "TimeoutError" ? "timeout" : (err as Error).message;
+    }
+    await new Promise((r) => setTimeout(r, 1500 * attempt));
   }
+  const hint = process.env.POKEMONTCG_API_KEY
+    ? "il servizio pokemontcg.io è momentaneamente giù, riprova tra qualche minuto"
+    : "il servizio pokemontcg.io è instabile senza chiave: aggiungi POKEMONTCG_API_KEY su Vercel (gratis) e riprova";
+  throw new Error(`Pokémon TCG API non risponde (${last}): ${hint}`);
 }
 
 async function pokemonGameId(db: PrismaClient) {
@@ -75,7 +87,7 @@ export async function importPokemonCards(db: PrismaClient, externalSetId: string
   let imported = 0;
   for (;;) {
     const { data, totalCount } = await get<ApiCard>(
-      `/cards?q=set.id:${encodeURIComponent(externalSetId)}&page=${page}&pageSize=250`,
+      `/cards?q=set.id:${encodeURIComponent(externalSetId)}&page=${page}&pageSize=${PAGE_SIZE}&orderBy=number`,
     );
     await db.$transaction(
       data.map((c) => {

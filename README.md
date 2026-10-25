@@ -12,6 +12,8 @@ Stack: Next.js (App Router), Postgres (Supabase) con Prisma, Stripe per i pagame
 - `SEALED`: prodotto sigillato (booster box, buste, ETB...), legato a un set ma non a una carta
 - `GRADED`: carta gradata, con ente (PSA/BGS/CGC), voto, numero di certificato e foto reali
 
+Le carte Pokémon (dati, immagini e prezzi Cardmarket) arrivano da [pokemontcg.io](https://pokemontcg.io) con "Importa/Aggiorna carte" nell'admin. Senza chiave l'API risponde spesso 500: crea una chiave gratuita su [dev.pokemontcg.io](https://dev.pokemontcg.io) e mettila in `POKEMONTCG_API_KEY` su Vercel (poi Redeploy).
+
 Aggiungere un nuovo gioco significa aggiungere una riga in `Game` e uno script di import, senza cambiare lo schema.
 
 ## Avvio in locale
