@@ -68,10 +68,18 @@ export async function importPokemonSets(db: PrismaClient) {
   const remote = await get<SetResume[]>("/sets");
   const existing = await db.cardSet.findMany({
     where: { gameId },
-    select: { id: true, name: true, tcgdexId: true, logoUrl: true, symbolUrl: true },
+    select: { id: true, name: true, slug: true, externalId: true, tcgdexId: true, logoUrl: true, symbolUrl: true },
   });
   const byTcgdex = new Map(existing.filter((s) => s.tcgdexId).map((s) => [s.tcgdexId!, s]));
-  const byName = new Map(existing.filter((s) => !s.tcgdexId).map((s) => [norm(s.name), s]));
+  const unlinked = existing.filter((s) => !s.tcgdexId);
+  const byName = new Map(unlinked.map((s) => [norm(s.name), s]));
+  // Stesso codice nelle due fonti (es. "sv10", "me01"): e' la stessa espansione anche se il nome e' scritto diversamente.
+  const byCode = new Map<string, (typeof existing)[number]>();
+  for (const s of unlinked) {
+    if (s.externalId) byCode.set(s.externalId.toLowerCase(), s);
+    byCode.set(s.slug.toLowerCase(), s);
+  }
+  const slugs = new Set(existing.map((s) => s.slug.toLowerCase()));
   const used = new Set(byTcgdex.keys());
   const tcgdexAssets = (r: SetResume) => ({
     logoUrl: r.logo ? `${r.logo}.png` : null,
@@ -96,6 +104,10 @@ export async function importPokemonSets(db: PrismaClient) {
     // Nome uguale, oppure un nome contenuto nell'altro (es. "Mega Evolution 30th Celebration" / "30th Celebration").
     const rn = norm(r.name);
     let match = byName.get(rn);
+    if (!match) {
+      const code = byCode.get(r.id.toLowerCase());
+      if (code && byName.has(norm(code.name))) match = code; // non ancora collegata in questo giro
+    }
     if (!match && rn.length >= 5) {
       const fuzzy = [...byName.entries()].filter(([n]) => n.length >= 5 && (n.includes(rn) || rn.includes(n)));
       if (fuzzy.length === 1) match = fuzzy[0][1];
@@ -129,7 +141,7 @@ export async function importPokemonSets(db: PrismaClient) {
       data: {
         gameId,
         tcgdexId: r.id,
-        slug: r.id,
+        slug: slugs.has(r.id.toLowerCase()) ? `tcgdex-${r.id}` : r.id,
         name: r.name,
         series: d?.serie?.name ?? null,
         releaseDate: d?.releaseDate ? new Date(d.releaseDate) : null,
