@@ -20,6 +20,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
           setId: listing.setId ?? "",
           cardId: listing.cardId ?? "",
           title: listing.title,
+          description: listing.description ?? "",
           language: listing.language,
           condition: listing.condition ?? "",
           sealedType: listing.sealedType ?? "",

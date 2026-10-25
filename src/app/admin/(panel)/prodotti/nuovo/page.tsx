@@ -15,6 +15,7 @@ export default async function NewListingPage() {
           setId: "",
           cardId: "",
           title: "",
+          description: "",
           language: "it",
           condition: "NEAR_MINT",
           sealedType: "",

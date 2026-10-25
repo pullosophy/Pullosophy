@@ -1,5 +1,5 @@
 import { Analytics } from "@vercel/analytics/next";
-import { company, previewMode, socials } from "@/lib/company";
+import { companyDataReady, whatsappUrl, company, previewMode, socials } from "@/lib/company";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Bebas_Neue, Inter } from "next/font/google";
@@ -52,7 +52,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               ))}
               <span className="text-black/30" title={t.nav.comingSoon}>One Piece</span>
             </nav>
-            <div className="ml-auto hidden sm:block">
+            <form action="/pokemon" className="ml-auto hidden md:block">
+              <input
+                type="search"
+                name="q"
+                placeholder={t.nav.search}
+                aria-label={t.nav.search}
+                className="w-44 rounded-full border border-line bg-muted px-4 py-1.5 text-sm focus:w-64 focus:outline-none focus:ring-2 focus:ring-brand/40 transition-all"
+              />
+            </form>
+            <div className="hidden sm:block">
               <LanguageSwitch locale={locale} />
             </div>
             <Link
@@ -118,13 +127,18 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Link href="/vendi" className="block hover:text-brand">{t.footer.sell}</Link>
               <Link href="/chi-siamo" className="block hover:text-brand">{t.footer.about}</Link>
               <a href={`mailto:${company.email}`} className="block hover:text-brand">{company.email}</a>
+              {whatsappUrl() && (
+                <a href={whatsappUrl()!} target="_blank" rel="noopener noreferrer" className="block hover:text-brand">
+                  {t.footer.whatsapp}
+                </a>
+              )}
             </div>
             <div className="text-sm space-y-2 text-white/80">
               <p className="font-semibold uppercase tracking-widest text-xs text-white/50">{t.footer.legal}</p>
               <Link href="/termini" className="block hover:text-brand">{t.footer.terms}</Link>
               <Link href="/privacy" className="block hover:text-brand">{t.footer.privacy}</Link>
               <Link href="/cookie" className="block hover:text-brand">{t.footer.cookie}</Link>
-              <p className="pt-2 text-xs text-white/50">{company.legalName} · P. IVA {company.vat}</p>
+              {companyDataReady && <p className="pt-2 text-xs text-white/50">{company.legalName} · P. IVA {company.vat}</p>}
             </div>
           </div>
           <p className="border-t border-white/10 py-4 text-center text-xs text-white/40">

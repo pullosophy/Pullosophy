@@ -9,6 +9,8 @@ import { getT, type Dictionary } from "@/lib/i18n";
 import { addToCart } from "@/app/actions/cart";
 import { RestockForm } from "@/components/restock-form";
 import { SafeImage } from "@/components/safe-image";
+import { ListingCard } from "@/components/listing-card";
+import { whatsappUrl } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +61,17 @@ export default async function ListingPage({ params }: Params) {
   const listing = await getListing(game, id);
   if (!listing) notFound();
 
+  // Altri prodotti della stessa espansione (o dello stesso gioco), in vendita.
+  const related = await db.listing.findMany({
+    where: { id: { not: listing.id }, gameId: listing.gameId, published: true, stock: { gt: 0 }, ...(listing.setId ? { setId: listing.setId } : {}) },
+    include: { card: true, set: true, game: true },
+    orderBy: { createdAt: "desc" },
+    take: 4,
+  });
+  const stockLine =
+    listing.stock <= 0 ? null : listing.stock === 1 ? t.product.lastOne : listing.stock <= 3 ? t.product.fewLeft.replace("{n}", String(listing.stock)) : t.product.inStock;
+  const wa = whatsappUrl(`${t.product.question} ${listing.title}`);
+
   const images = listingImages(listing);
   // Dati strutturati per Google (prezzo e disponibilita' nei risultati di ricerca).
   const jsonLd = {
@@ -101,9 +114,11 @@ export default async function ListingPage({ params }: Params) {
           : null;
 
   return (
+    <div className="space-y-12">
     <div className="grid gap-10 md:grid-cols-2">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="space-y-3">
+        <Link href={`/${game}`} className="inline-block text-sm text-black/60 hover:text-brand md:hidden">← {t.product.back}</Link>
         {images.map((src) => (
           <div key={src} className="rounded-2xl bg-muted p-6">
             <SafeImage
@@ -156,6 +171,9 @@ export default async function ListingPage({ params }: Params) {
             {listing.releaseDate.toLocaleDateString(locale === "en" ? "en-GB" : "it-IT", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         )}
+        {stockLine && (
+          <p className={`text-sm font-medium ${listing.stock <= 3 ? "text-brand" : "text-green-700"}`}>● {stockLine}</p>
+        )}
         {listing.stock > 0 ? (
           <form action={addToCart} className="flex gap-3 items-center">
             <input type="hidden" name="listingId" value={listing.id} />
@@ -177,7 +195,39 @@ export default async function ListingPage({ params }: Params) {
             <RestockForm listingId={listing.id} labels={t.product.restock} />
           </div>
         )}
+        <ul className="space-y-1 text-sm text-black/70">
+          {t.product.reassurance.map((r) => (
+            <li key={r} className="flex items-center gap-2">
+              <span className="text-brand">✓</span> {r}
+            </li>
+          ))}
+        </ul>
+        {listing.description && (
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold">{t.product.description}</p>
+            <p className="whitespace-pre-line text-black/70">{listing.description}</p>
+          </div>
+        )}
+        {wa && (
+          <a href={wa} target="_blank" rel="noopener noreferrer" className="block text-sm underline hover:text-brand">
+            {t.product.question} {t.footer.whatsapp}
+          </a>
+        )}
+        <Link href={`/${game}`} className="hidden text-sm text-black/60 hover:text-brand md:block">← {t.product.back}</Link>
       </div>
+    </div>
+    {related.length > 0 && (
+      <section className="space-y-4 border-t border-line pt-8">
+        <h2 className="font-display text-3xl">
+          {t.product.related} {listing.set?.name ?? listing.game.name}
+        </h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {related.map((l) => (
+            <ListingCard key={l.id} listing={l} t={t} />
+          ))}
+        </div>
+      </section>
+    )}
     </div>
   );
 }

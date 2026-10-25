@@ -29,7 +29,7 @@ export function ListingCard({ listing: l, t }: Props) {
             src={image}
             alt={l.title}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-[1.04]"
+            className={`absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-[1.04] ${l.stock === 0 ? "opacity-50 grayscale" : ""}`}
             fallback={placeholder}
           />
         ) : (
@@ -47,7 +47,12 @@ export function ListingCard({ listing: l, t }: Props) {
         <span className="absolute right-2 top-2 rounded bg-white/90 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase">
           {l.language}
         </span>
-        {preorder && (
+        {l.stock === 0 && (
+          <span className="absolute inset-x-0 bottom-0 bg-foreground/80 py-1 text-center text-[0.7rem] font-bold uppercase tracking-wide text-white">
+            {t.product.soldOut}
+          </span>
+        )}
+        {preorder && l.stock > 0 && (
           <span className="absolute bottom-2 left-2 rounded bg-brand px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white">
             {t.product.preorder}
           </span>
