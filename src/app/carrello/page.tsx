@@ -48,7 +48,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
         {lines.map(({ listing, quantity }) => (
           <li key={listing.id} className="flex flex-wrap items-center gap-4 py-3">
             <Link href={`/${listing.game.slug}/p/${listing.id}`} className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-muted p-1">
-              {thumb(listing) && <SafeImage src={thumb(listing)!} alt="" className="h-full w-full object-contain" />}
+              {thumb(listing) && <SafeImage src={thumb(listing)!} alt="" shape={thumb(listing) === listing.set?.logoUrl ? "logo" : undefined} className="h-full w-full object-contain" />}
             </Link>
             <div className="min-w-0 flex-1">
               <Link href={`/${listing.game.slug}/p/${listing.id}`} className="font-medium hover:text-brand">

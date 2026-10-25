@@ -10,6 +10,7 @@ type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game
 export function ListingCard({ listing: l, t }: Props) {
   // Sigillati senza foto: logo dell'espansione come segnaposto.
   const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall ?? (l.kind === "SEALED" ? l.set?.logoUrl : null);
+  const isLogo = !!image && image === l.set?.logoUrl;
   const preorder = !!l.releaseDate && l.releaseDate.getTime() > Date.now();
   const badge =
     l.kind === "GRADED"
@@ -28,6 +29,7 @@ export function ListingCard({ listing: l, t }: Props) {
           <SafeImage
             src={image}
             alt={l.title}
+            shape={isLogo ? "logo" : undefined}
             loading="lazy"
             className={`absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-300 group-hover:scale-[1.04] ${l.stock === 0 ? "opacity-50 grayscale" : ""}`}
             fallback={placeholder}

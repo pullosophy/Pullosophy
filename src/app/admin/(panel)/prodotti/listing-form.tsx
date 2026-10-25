@@ -4,6 +4,7 @@ import { startTransition, useActionState, useEffect, useState } from "react";
 import { saveListing } from "@/app/actions/admin";
 import { conditionLabels, languageLabels, sealedLabels } from "@/lib/labels";
 import { ImageUploader } from "./image-uploader";
+import { SafeImage } from "@/components/safe-image";
 
 type Option = { id: string; name: string };
 type CardOption = {
@@ -221,8 +222,7 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
               <option key={s.key} value={s.key}>{s.label}</option>
             ))}
           </select>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {sealedPick?.image && <img src={sealedPick.image} alt="" className="mt-2 h-16 object-contain" />}
+          {sealedPick?.image && <SafeImage src={sealedPick.image} alt="" shape="logo" className="mt-2 h-16 object-contain" />}
           <span className="mt-1 block text-xs opacity-60">
             Carica le foto del prodotto qui sotto: senza, nel negozio si vede il logo dell&apos;espansione. Le foto caricate
             una volta vengono riproposte quando crei lo stesso prodotto (altra lingua, ristock).
