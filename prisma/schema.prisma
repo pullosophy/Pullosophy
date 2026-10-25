@@ -170,5 +170,7 @@ model Subscriber {
   email     String   @unique
   locale    String   @default("it")
   source    String   @default("popup")
+  newReleases Boolean  @default(true) // vuole l'avviso delle nuove uscite
+  interests   String[] @default([]) // slug dei giochi che seguono, es. ["pokemon", "one-piece"]
   createdAt DateTime @default(now())
 }

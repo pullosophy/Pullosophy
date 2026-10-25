@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 
 export default async function SubscribersPage() {
   const subs = await db.subscriber.findMany({ orderBy: { createdAt: "desc" } });
+  const wantNews = subs.filter((s) => s.newReleases).length;
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -11,6 +12,7 @@ export default async function SubscribersPage() {
       </div>
       <p className="text-sm opacity-70">
         Raccolti dal pop-up di benvenuto. Il codice sconto che ricevono è gestito su Stripe (Catalogo prodotti → Coupon).
+        {subs.length > 0 && ` ${wantNews} su ${subs.length} vogliono l'avviso delle nuove uscite.`}
       </p>
       {subs.length === 0 && <p className="opacity-70">Nessun iscritto ancora.</p>}
       <table className="w-full text-sm">
@@ -19,6 +21,8 @@ export default async function SubscribersPage() {
             <tr key={s.id} className="border-t border-black/10">
               <td className="py-2 font-medium">{s.email}</td>
               <td className="py-2 uppercase opacity-60">{s.locale}</td>
+              <td className="py-2 opacity-60">{s.newReleases ? "Nuove uscite" : "Solo sconto"}</td>
+              <td className="py-2 opacity-60">{s.interests.join(", ")}</td>
               <td className="py-2 text-right opacity-60">{s.createdAt.toLocaleDateString("it-IT")}</td>
             </tr>
           ))}

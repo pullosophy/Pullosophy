@@ -11,6 +11,10 @@ type Labels = {
   kicker: string;
   title: string;
   text: string;
+  perks: string[];
+  newReleases: string;
+  interestsLabel: string;
+  interests: Record<string, string>;
   placeholder: string;
   button: string;
   consent: string;
@@ -88,7 +92,15 @@ export function WelcomePopup({ labels, percent }: { labels: Labels; percent: num
             </div>
           ) : (
             <form action={action} className="space-y-3">
-              <p className="text-sm text-black/70">{labels.text}</p>
+              <ul className="space-y-1 text-sm">
+                {labels.perks.map((perk) => (
+                  <li key={perk} className="flex gap-2">
+                    <span className="font-bold text-brand">✓</span>
+                    <span>{perk}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-black/60">{labels.text}</p>
               <input
                 type="email"
                 name="email"
@@ -97,6 +109,19 @@ export function WelcomePopup({ labels, percent }: { labels: Labels; percent: num
                 placeholder={labels.placeholder}
                 className="w-full rounded-full border border-line px-4 py-3 outline-none focus:border-foreground"
               />
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="newReleases" defaultChecked className="accent-brand" />
+                <span>{labels.newReleases}</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-black/60">{labels.interestsLabel}</span>
+                {Object.entries(labels.interests).map(([slug, name]) => (
+                  <label key={slug} className="flex cursor-pointer items-center gap-1 rounded-full border border-line px-3 py-1 has-[:checked]:border-brand has-[:checked]:bg-brand/10">
+                    <input type="checkbox" name="interests" value={slug} defaultChecked={slug === "pokemon"} className="accent-brand" />
+                    <span>{name}</span>
+                  </label>
+                ))}
+              </div>
               {state.error && <p className="text-sm text-brand">{state.error === "email" ? labels.errorEmail : labels.errorGeneric}</p>}
               <button disabled={pending} className="w-full rounded-full bg-foreground px-5 py-3 font-semibold text-white hover:bg-brand disabled:opacity-60">
                 {pending ? "…" : labels.button}
