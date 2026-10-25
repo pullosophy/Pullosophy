@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/cron/tcgdex", "schedule": "0 3 * * *" }]
+}
