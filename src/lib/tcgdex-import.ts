@@ -95,8 +95,10 @@ async function pokemonGameId(db: PrismaClient) {
 
 // Lista espansioni: aggancia quelle gia' presenti (dalla vecchia API) per nome, crea le nuove.
 // Poche query (una lettura, scritture solo dove cambia qualcosa) e tempo massimo: al clic successivo continua.
-export async function importPokemonSets(db: PrismaClient) {
-  const started = Date.now();
+export type ImportOptions = { deadline?: number }; // istante (ms) oltre il quale ci si ferma; default 40 s da adesso
+
+export async function importPokemonSets(db: PrismaClient, opts: ImportOptions = {}) {
+  const deadline = opts.deadline ?? Date.now() + TIME_BUDGET_MS;
   const gameId = await pokemonGameId(db);
   const [all, pocket] = await Promise.all([get<SetResume[]>("/sets"), pocketIds()]);
   const isPocket = (id: string) => pocket.has(id) || looksPocket(id);
@@ -238,7 +240,7 @@ export async function importPokemonSets(db: PrismaClient) {
   let created = 0;
   let stopped = false;
   await parallel(toCreate, async (r) => {
-    if (stopped || Date.now() - started > TIME_BUDGET_MS) {
+    if (stopped || Date.now() > deadline) {
       stopped = true;
       return;
     }
@@ -264,8 +266,8 @@ export async function importPokemonSets(db: PrismaClient) {
 }
 
 // Carte di un'espansione con prezzi Cardmarket. Si ferma entro il tempo massimo e riprende al clic successivo.
-export async function importPokemonCards(db: PrismaClient, setId: string) {
-  const started = Date.now();
+export async function importPokemonCards(db: PrismaClient, setId: string, opts: ImportOptions = {}) {
+  const deadline = opts.deadline ?? Date.now() + TIME_BUDGET_MS;
   const set = await db.cardSet.findUniqueOrThrow({ where: { id: setId } });
   if (!set.tcgdexId) {
     throw new Error(`"${set.name}" non è collegata a TCGdex: premi "Aggiorna elenco espansioni" e riprova`);
@@ -291,7 +293,7 @@ export async function importPokemonCards(db: PrismaClient, setId: string) {
   let stopped = false;
 
   await parallel(todo, async (c) => {
-    if (stopped || Date.now() - started > TIME_BUDGET_MS) {
+    if (stopped || Date.now() > deadline) {
       stopped = true;
       return;
     }

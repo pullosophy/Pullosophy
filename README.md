@@ -60,3 +60,11 @@ nella variabile `GOOGLE_SITE_VERIFICATION` su Vercel, fai Redeploy e premi Verif
 - **Espansioni**: aggiorna l'elenco delle espansioni Pokémon e importa le carte di quelle che vendi
 - **Prodotti**: crea e modifica carte singole, sigillati e gradate (prezzo, quantità, foto, online/bozza)
 - **Ordini**: vedi gli ordini con indirizzo, cambia lo stato e aggiungi il codice di tracking
+
+## Aggiornamento automatico (Vercel Cron)
+
+`vercel.json` programma ogni notte alle 03:00 UTC la chiamata a `/api/cron/tcgdex`, che aggiorna l'elenco
+espansioni e i prezzi Cardmarket delle carte (prima quelle con prodotti in vendita, poi le piu' vecchie),
+entro il limite di 60 secondi del piano Hobby. Serve la variabile `CRON_SECRET` su Vercel (una stringa
+lunga e casuale): Vercel la invia come `Authorization: Bearer` e la route rifiuta tutto il resto.
+La prima importazione completa delle carte resta manuale: Admin → Espansioni → "Aggiorna tutte le carte".
