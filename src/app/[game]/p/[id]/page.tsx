@@ -8,6 +8,7 @@ import { conditionLabels } from "@/lib/labels";
 import { getT, type Dictionary } from "@/lib/i18n";
 import { addToCart } from "@/app/actions/cart";
 import { RestockForm } from "@/components/restock-form";
+import { SafeImage } from "@/components/safe-image";
 
 export const dynamic = "force-dynamic";
 
@@ -105,8 +106,12 @@ export default async function ListingPage({ params }: Params) {
       <div className="space-y-3">
         {images.map((src) => (
           <div key={src} className="rounded-2xl bg-muted p-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={listing.title} className="mx-auto max-h-[70vh] w-auto rounded-lg" />
+            <SafeImage
+              src={src}
+              alt={listing.title}
+              className="mx-auto max-h-[70vh] w-auto rounded-lg"
+              fallback={<p className="py-16 text-center font-display text-4xl text-black/10">PULLOSOPHY</p>}
+            />
           </div>
         ))}
       </div>
