@@ -42,6 +42,7 @@ export async function importSets() {
   try {
     const r = await importPokemonSets(db);
     message = `${r.total} espansioni su TCGdex: ${r.created} nuove, ${r.linked} collegate a quelle già presenti`;
+    if (r.partial) message += `. Ne mancano ${r.remaining}: premi di nuovo "Aggiorna elenco espansioni" per continuare`;
   } catch (err) {
     message = `Errore: ${(err as Error).message}`;
   }

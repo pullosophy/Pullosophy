@@ -61,7 +61,9 @@ async function pokemonGameId(db: PrismaClient) {
 }
 
 // Lista espansioni: aggancia quelle gia' presenti (dalla vecchia API) per nome, crea le nuove.
+// Poche query (una lettura, scritture solo dove cambia qualcosa) e tempo massimo: al clic successivo continua.
 export async function importPokemonSets(db: PrismaClient) {
+  const started = Date.now();
   const gameId = await pokemonGameId(db);
   const remote = await get<SetResume[]>("/sets");
   const existing = await db.cardSet.findMany({
@@ -71,21 +73,24 @@ export async function importPokemonSets(db: PrismaClient) {
   const byTcgdex = new Map(existing.filter((s) => s.tcgdexId).map((s) => [s.tcgdexId!, s]));
   const byName = new Map(existing.filter((s) => !s.tcgdexId).map((s) => [norm(s.name), s]));
   const used = new Set(byTcgdex.keys());
-  let created = 0;
-  let linked = 0;
+  const tcgdexAssets = (r: SetResume) => ({
+    logoUrl: r.logo ? `${r.logo}.png` : null,
+    symbolUrl: r.symbol ? `${r.symbol}.png` : null,
+  });
 
+  const updates: { id: string; data: { tcgdexId?: string; logoUrl?: string | null; symbolUrl?: string | null } }[] = [];
   const toCreate: SetResume[] = [];
+  let linked = 0;
   for (const r of remote) {
+    const assets = tcgdexAssets(r);
     // Loghi e simboli TCGdex solo dove mancano: quelli gia' presenti (vecchia API) restano, perche' su TCGdex non tutti esistono.
     const known = byTcgdex.get(r.id);
     if (known) {
-      await db.cardSet.update({
-        where: { id: known.id },
-        data: {
-          logoUrl: known.logoUrl ?? (r.logo ? `${r.logo}.png` : null),
-          symbolUrl: known.symbolUrl ?? (r.symbol ? `${r.symbol}.png` : null),
-        },
-      });
+      const data = {
+        ...(known.logoUrl || !assets.logoUrl ? {} : { logoUrl: assets.logoUrl }),
+        ...(known.symbolUrl || !assets.symbolUrl ? {} : { symbolUrl: assets.symbolUrl }),
+      };
+      if (Object.keys(data).length) updates.push({ id: known.id, data });
       continue;
     }
     // Nome uguale, oppure un nome contenuto nell'altro (es. "Mega Evolution 30th Celebration" / "30th Celebration").
@@ -96,14 +101,9 @@ export async function importPokemonSets(db: PrismaClient) {
       if (fuzzy.length === 1) match = fuzzy[0][1];
     }
     if (match && !used.has(r.id)) {
-      // Stesso nome: e' l'espansione importata in passato, la colleghiamo a TCGdex senza duplicarla.
-      await db.cardSet.update({
-        where: { id: match.id },
-        data: {
-          tcgdexId: r.id,
-          logoUrl: match.logoUrl ?? (r.logo ? `${r.logo}.png` : null),
-          symbolUrl: match.symbolUrl ?? (r.symbol ? `${r.symbol}.png` : null),
-        },
+      updates.push({
+        id: match.id,
+        data: { tcgdexId: r.id, logoUrl: match.logoUrl ?? assets.logoUrl, symbolUrl: match.symbolUrl ?? assets.symbolUrl },
       });
       byName.delete(norm(match.name));
       used.add(r.id);
@@ -113,8 +113,17 @@ export async function importPokemonSets(db: PrismaClient) {
     toCreate.push(r);
   }
 
-  // Le nuove hanno bisogno del dettaglio per data di uscita e serie.
+  // Tutti gli aggiornamenti in una transazione sola (un viaggio al database invece di centinaia).
+  if (updates.length) await db.$transaction(updates.map((u) => db.cardSet.update({ where: { id: u.id }, data: u.data })));
+
+  // Le nuove hanno bisogno del dettaglio per data di uscita e serie: in parallelo, entro il tempo massimo.
+  let created = 0;
+  let stopped = false;
   await parallel(toCreate, async (r) => {
+    if (stopped || Date.now() - started > TIME_BUDGET_MS) {
+      stopped = true;
+      return;
+    }
     const d = await get<SetDetail>(`/sets/${encodeURIComponent(r.id)}`).catch(() => null);
     await db.cardSet.create({
       data: {
@@ -124,13 +133,12 @@ export async function importPokemonSets(db: PrismaClient) {
         name: r.name,
         series: d?.serie?.name ?? null,
         releaseDate: d?.releaseDate ? new Date(d.releaseDate) : null,
-        logoUrl: r.logo ? `${r.logo}.png` : null,
-        symbolUrl: r.symbol ? `${r.symbol}.png` : null,
+        ...tcgdexAssets(r),
       },
     });
     created++;
   });
-  return { total: remote.length, created, linked };
+  return { total: remote.length, created, linked, partial: stopped, remaining: toCreate.length - created };
 }
 
 // Carte di un'espansione con prezzi Cardmarket. Si ferma entro il tempo massimo e riprende al clic successivo.
