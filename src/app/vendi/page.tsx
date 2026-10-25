@@ -1,4 +1,4 @@
-import { company } from "@/lib/company";
+import { company, whatsappUrl } from "@/lib/company";
 import { getT } from "@/lib/i18n";
 
 export async function generateMetadata() {
@@ -34,6 +34,16 @@ export default async function SellPage() {
         >
           {p.ctaButton} {company.email}
         </a>
+        {whatsappUrl(p.mailSubject) && (
+          <a
+            href={whatsappUrl(p.mailSubject)!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 ml-3 inline-block rounded-full border border-white/30 px-6 py-3 font-semibold hover:border-brand hover:text-brand"
+          >
+            {t.footer.whatsapp}
+          </a>
+        )}
       </section>
     </article>
   );

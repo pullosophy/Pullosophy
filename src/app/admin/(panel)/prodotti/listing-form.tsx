@@ -36,6 +36,7 @@ export type ListingValues = {
   price: string;
   stock: string;
   images: string;
+  description: string;
   published: boolean;
   releaseDate: string; // yyyy-mm-dd o vuoto
 };
@@ -172,6 +173,11 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
       <label className="block">
         <span className="text-sm opacity-70">Titolo mostrato nel negozio</span>
         <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required className={field} />
+      </label>
+
+      <label className="block">
+        <span className="text-sm opacity-70">Descrizione (facoltativa: cosa contiene, note sulla carta, perché è speciale)</span>
+        <textarea name="description" defaultValue={initial.description} rows={3} className={field} />
       </label>
 
       <label className="block">

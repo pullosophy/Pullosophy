@@ -45,7 +45,7 @@ export function FilterForm({
       }}
     >
       {search}
-      <button type="button" onClick={() => setOpen(!open)} className="text-sm font-semibold sm:hidden">
+      <button type="button" onClick={() => setOpen(!open)} className="rounded-full border border-line px-4 py-2 text-sm font-semibold sm:hidden">
         {open ? labels.close : labels.open}
       </button>
       <div className={open ? "block" : "hidden sm:block"}>

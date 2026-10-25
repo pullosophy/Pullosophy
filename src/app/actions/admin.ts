@@ -123,6 +123,7 @@ const listingSchema = z
     price: z.coerce.number().positive("Prezzo obbligatorio"),
     stock: z.coerce.number().int().min(0),
     images: z.string().default(""),
+    description: z.string().trim().default(""),
     published: z.preprocess((v) => v === "on", z.boolean()),
     releaseDate: optional(z.coerce.date()),
   })
@@ -162,6 +163,7 @@ export async function saveListing(_prev: ListingFormState, formData: FormData): 
       .split(/\s+/)
       .map((s) => s.trim())
       .filter((s) => /^https:\/\//.test(s)),
+    description: v.description || null,
     published: v.published,
     releaseDate: v.releaseDate ?? null,
   };

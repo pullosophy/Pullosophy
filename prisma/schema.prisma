@@ -119,6 +119,7 @@ model Listing {
   priceCents Int
   stock      Int         @default(0)
   images     String[] // foto reali (obbligatorie per le gradate)
+  description String? // testo libero mostrato nella scheda (es. contenuto di un box)
   published  Boolean     @default(false)
   releaseDate DateTime? // preordine: data di uscita (se futura, il prodotto e' "In arrivo")
   orderItems OrderItem[]

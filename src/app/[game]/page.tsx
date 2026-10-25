@@ -77,7 +77,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
       : undefined,
   };
 
-  const [listings, total, sets, languages] = await Promise.all([
+  const [listings, total, sets, languages, soldOut] = await Promise.all([
     db.listing.findMany({ where, include: { card: true, set: true, game: true }, orderBy: sorts[ordina], take: 60 }),
     db.listing.count({ where }),
     // Solo le espansioni e le lingue che hanno prodotti in vendita.
@@ -87,6 +87,13 @@ export default async function GamePage({ params, searchParams }: { params: Promi
       orderBy: { releaseDate: "desc" },
     }),
     db.listing.findMany({ where: base, distinct: ["language"], select: { language: true } }),
+    // Esauriti di recente: restano visibili (chi li cerca puo' chiedere l'avviso di ritorno) ma in fondo, senza filtri.
+    db.listing.findMany({
+      where: { ...where, stock: 0, releaseDate: null },
+      include: { card: true, set: true, game: true },
+      orderBy: { updatedAt: "desc" },
+      take: 8,
+    }),
   ]);
 
   const query = (patch: Partial<Search>) => {
@@ -202,6 +209,17 @@ export default async function GamePage({ params, searchParams }: { params: Promi
             <ListingCard key={l.id} listing={l} t={t} />
           ))}
         </div>
+      )}
+      {soldOut.length > 0 && (
+        <section className="space-y-3 border-t border-line pt-8">
+          <h2 className="font-display text-3xl">{t.catalog.soldOutTitle}</h2>
+          <p className="text-sm text-black/60">{t.catalog.soldOutText}</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {soldOut.map((l) => (
+              <ListingCard key={l.id} listing={l} t={t} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );
