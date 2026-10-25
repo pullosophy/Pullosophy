@@ -61,6 +61,7 @@ export async function startCheckout(formData: FormData) {
       shipping_address_collection: {
         allowed_countries: [country] as Array<"IT">,
       },
+      allow_promotion_codes: true,
       shipping_options: [
         {
           shipping_rate_data: {

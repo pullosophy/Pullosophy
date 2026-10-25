@@ -163,3 +163,12 @@ model ShippingZone {
   baseCents     Int
   freeOverCents Int?
 }
+
+// Iscritti alla newsletter (pop-up di benvenuto con codice sconto).
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  locale    String   @default("it")
+  source    String   @default("popup")
+  createdAt DateTime @default(now())
+}

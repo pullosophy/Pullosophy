@@ -23,6 +23,10 @@ export default function PrivacyPage() {
           dati della carta.
         </li>
         <li>
+          <strong>Newsletter</strong> (email lasciata nel pop-up di benvenuto): usata solo per inviarti il codice sconto e le novità del
+          negozio, in base al tuo consenso. Puoi cancellarti in qualsiasi momento scrivendoci; i dati vengono eliminati subito.
+        </li>
+        <li>
           <strong>Carrello</strong>: il contenuto del carrello è salvato in un cookie tecnico sul tuo dispositivo, non su nostri server.
         </li>
         <li>
