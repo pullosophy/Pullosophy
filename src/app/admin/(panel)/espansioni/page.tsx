@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { importCards, importSets, linkSet } from "@/app/actions/admin";
 import { SubmitButton } from "../submit-button";
 import { SafeImage } from "@/components/safe-image";
+import { ImportAll } from "./import-all";
 
 export const maxDuration = 60;
 
@@ -22,6 +23,7 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         <form action={importSets}>
           <SubmitButton pending="Aggiorno…">Aggiorna elenco espansioni</SubmitButton>
         </form>
+        <ImportAll />
       </div>
       {ok && (
         <p className={`rounded px-3 py-2 text-sm ${ok.startsWith("Errore") ? "bg-red-600/15" : "bg-green-600/15"}`}>
@@ -29,8 +31,8 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         </p>
       )}
       <p className="text-sm opacity-70">
-        Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). Importa le carte solo delle espansioni che vendi: servono per
-        creare carte singole e gradate. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
+        Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). “Aggiorna tutte le carte” scarica tutte le espansioni una dopo l&apos;altra
+        (ci vuole un po&apos;: lascia la pagina aperta), oppure importa solo quelle che vendi con il tasto accanto a ciascuna. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
         ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato. Se un&apos;espansione risulta “non collegata a TCGdex”, scegli
         dal menu “Collega a…” quella con lo stesso contenuto (TCGdex a volte usa un nome diverso) e premi “Collega”.
       </p>
