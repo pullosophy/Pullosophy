@@ -119,6 +119,7 @@ model Listing {
   published  Boolean     @default(false)
   releaseDate DateTime? // preordine: data di uscita (se futura, il prodotto e' "In arrivo")
   orderItems OrderItem[]
+  stockAlerts StockAlert[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -183,4 +184,17 @@ model Subscriber {
   newReleases Boolean  @default(true) // vuole l'avviso delle nuove uscite
   interests   String[] @default([]) // slug dei giochi che seguono, es. ["pokemon", "one-piece"]
   createdAt DateTime @default(now())
+}
+
+// "Avvisami quando torna disponibile": una riga per email e prodotto, cancellata dopo l'invio.
+model StockAlert {
+  id        String    @id @default(cuid())
+  email     String
+  listingId String
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  locale    String    @default("it")
+  createdAt DateTime  @default(now())
+
+  @@unique([email, listingId])
+  @@index([listingId])
 }

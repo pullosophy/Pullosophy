@@ -9,6 +9,7 @@ import { ADMIN_COOKIE, adminToken } from "@/lib/admin-auth";
 import { importPokemonCards, importPokemonSets } from "@/lib/pokemon-import";
 import { sendEmail } from "@/lib/email";
 import { orderShippedEmail } from "@/lib/email-templates";
+import { notifyStockAlerts } from "@/app/actions/stock-alerts";
 
 // Ogni azione ricontrolla il cookie: il middleware protegge le pagine, non le server action.
 async function requireAdmin() {
@@ -126,11 +127,22 @@ export async function saveListing(_prev: ListingFormState, formData: FormData): 
   };
 
   const id = formData.get("id");
-  if (typeof id === "string" && id) await db.listing.update({ where: { id }, data });
-  else await db.listing.create({ data });
+  let notice = "";
+  if (typeof id === "string" && id) {
+    await db.listing.update({ where: { id }, data });
+    // Tornato disponibile e pubblicato: avvisiamo chi aveva chiesto "Avvisami".
+    if (data.stock > 0 && data.published) {
+      const r = await notifyStockAlerts(id).catch((err) => {
+        console.error("[admin] avvisi torna disponibile:", err);
+        return { sent: 0, failed: 1, skipped: false };
+      });
+      if (r.skipped) notice = "Avvisi \"torna disponibile\" NON inviati: manca RESEND_API_KEY su Vercel";
+      else if (r.sent || r.failed) notice = `Avvisi "torna disponibile": ${r.sent} inviati${r.failed ? `, ${r.failed} NON inviati (vedi log)` : ""}`;
+    }
+  } else await db.listing.create({ data });
 
   revalidatePath("/admin/prodotti");
-  redirect("/admin/prodotti");
+  redirect(notice ? `/admin/prodotti?ok=${encodeURIComponent(notice)}` : "/admin/prodotti");
 }
 
 const orderStatusLabels: Record<string, string> = {

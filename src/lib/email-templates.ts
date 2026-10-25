@@ -29,6 +29,12 @@ const texts = {
     shipTo: "Spedizione a",
     questions: "Domande? Rispondi a questa email.",
     shop: "Vai al negozio",
+    track: "Segui il tuo ordine",
+    restockSubject: (title: string) => `${title} è di nuovo disponibile · Pullosophy`,
+    restockTitle: "È tornato disponibile!",
+    restockIntro: (title: string) => `Ci avevi chiesto di avvisarti: "${title}" è di nuovo in negozio. Le quantità sono limitate, chi prima arriva…`,
+    restockButton: "Vai al prodotto",
+    restockNote: "Ricevi questa email una sola volta, perché l'hai richiesta sulla pagina del prodotto.",
   },
   en: {
     confirmSubject: (n: string) => `Order ${n} confirmed · Pullosophy`,
@@ -50,6 +56,12 @@ const texts = {
     shipTo: "Shipping to",
     questions: "Questions? Just reply to this email.",
     shop: "Go to the shop",
+    track: "Track your order",
+    restockSubject: (title: string) => `${title} is back in stock · Pullosophy`,
+    restockTitle: "It's back in stock!",
+    restockIntro: (title: string) => `You asked us to let you know: "${title}" is back in the shop. Quantities are limited, first come first served…`,
+    restockButton: "View the product",
+    restockNote: "You receive this email only once, because you requested it on the product page.",
   },
 };
 
@@ -83,6 +95,15 @@ ${bodyHtml}
 }
 
 type OrderWithItems = Order & { items: OrderItem[] };
+
+// Link alla pagina "Dov'e' il mio ordine" con numero ed email gia' compilati.
+export function trackUrl(order: Pick<Order, "id" | "email">) {
+  return `${SITE}/ordine/traccia?n=${orderNumber(order.id)}&email=${encodeURIComponent(order.email)}`;
+}
+
+function trackLink(order: Pick<Order, "id" | "email">, t: (typeof texts)[Locale]) {
+  return `<p style="margin:16px 0 0;font-size:14px"><a href="${trackUrl(order)}" style="color:#E3242B;font-weight:700">${esc(t.track)} →</a></p>`;
+}
 type Address = { name?: string; address?: Record<string, string | null> };
 
 function addressLine(order: Order) {
@@ -129,8 +150,8 @@ export function orderConfirmationEmail(order: OrderWithItems) {
   const s = orderSummary(order, t);
   return {
     subject: t.confirmSubject(orderNumber(order.id)),
-    html: layout(t.confirmTitle, `<p style="margin:0 0 16px;font-size:15px">${esc(t.confirmIntro)}</p>${s.html}`, t),
-    text: `${t.confirmTitle}\n\n${t.confirmIntro}\n\n${s.text}\n\n${t.questions}\n${SITE}`,
+    html: layout(t.confirmTitle, `<p style="margin:0 0 16px;font-size:15px">${esc(t.confirmIntro)}</p>${s.html}${trackLink(order, t)}`, t),
+    text: `${t.confirmTitle}\n\n${t.confirmIntro}\n\n${s.text}\n\n${t.track}: ${trackUrl(order)}\n\n${t.questions}\n${SITE}`,
   };
 }
 
@@ -142,8 +163,8 @@ export function orderShippedEmail(order: OrderWithItems) {
     : "";
   return {
     subject: t.shippedSubject(orderNumber(order.id)),
-    html: layout(t.shippedTitle, `<p style="margin:0 0 16px;font-size:15px">${esc(t.shippedIntro)}</p>${tracking}${s.html}`, t),
-    text: `${t.shippedTitle}\n\n${t.shippedIntro}\n${order.trackingNumber ? `${t.tracking}: ${order.trackingNumber}\n` : ""}\n${s.text}\n\n${t.questions}\n${SITE}`,
+    html: layout(t.shippedTitle, `<p style="margin:0 0 16px;font-size:15px">${esc(t.shippedIntro)}</p>${tracking}${s.html}${trackLink(order, t)}`, t),
+    text: `${t.shippedTitle}\n\n${t.shippedIntro}\n${order.trackingNumber ? `${t.tracking}: ${order.trackingNumber}\n` : ""}\n${s.text}\n\n${t.track}: ${trackUrl(order)}\n\n${t.questions}\n${SITE}`,
   };
 }
 
@@ -159,5 +180,21 @@ export function welcomeEmail(locale: string, code: string, percent: number, newR
       t,
     ),
     text: `${t.welcomeTitle}\n\n${t.welcomeIntro(percent)}\n\n${code}\n${newReleases ? `\n${t.welcomeNews}\n` : ""}\n${SITE}`,
+  };
+}
+
+export function restockEmail(locale: string, listing: { title: string; priceCents: number }, url: string) {
+  const t = texts[loc(locale)];
+  return {
+    subject: t.restockSubject(listing.title),
+    html: layout(
+      t.restockTitle,
+      `<p style="margin:0 0 16px;font-size:15px">${esc(t.restockIntro(listing.title))}</p>
+<p style="margin:0 0 16px;font-size:20px;font-weight:700">${formatPrice(listing.priceCents)}</p>
+<p style="margin:0"><a href="${url}" style="display:inline-block;background:#E3242B;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:700">${esc(t.restockButton)}</a></p>
+<p style="margin:16px 0 0;font-size:13px;color:#777">${esc(t.restockNote)}</p>`,
+      t,
+    ),
+    text: `${t.restockTitle}\n\n${t.restockIntro(listing.title)}\n${formatPrice(listing.priceCents)}\n\n${url}\n\n${t.restockNote}`,
   };
 }

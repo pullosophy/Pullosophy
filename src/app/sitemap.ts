@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   ]);
   return [
-    ...["/spedizioni", "/condizioni-carte", "/vendi", "/chi-siamo", "/termini", "/privacy", "/cookie"].map((path) => ({
+    ...["/spedizioni", "/condizioni-carte", "/vendi", "/chi-siamo", "/ordine/traccia", "/termini", "/privacy", "/cookie"].map((path) => ({
       url: `${base}${path}`,
       changeFrequency: "monthly" as const,
       priority: 0.4,

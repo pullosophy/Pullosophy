@@ -13,7 +13,10 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
       <h1 className="font-display text-6xl">{t.thanks.title}</h1>
       <p>{t.thanks.text}</p>
       {id && <p className="text-sm opacity-70">{t.thanks.orderNumber} {id}</p>}
-      <Link href="/" className="underline">{t.thanks.back}</Link>
+      <p className="flex flex-wrap gap-4">
+        <Link href="/ordine/traccia" className="underline">{t.thanks.track}</Link>
+        <Link href="/" className="underline">{t.thanks.back}</Link>
+      </p>
     </div>
   );
 }

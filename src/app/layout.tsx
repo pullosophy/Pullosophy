@@ -113,6 +113,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <p className="font-semibold uppercase tracking-widest text-xs text-white/50">{t.footer.info}</p>
               <p>{t.footer.location}</p>
               <Link href="/spedizioni" className="block hover:text-brand">{t.footer.shipping}</Link>
+              <Link href="/ordine/traccia" className="block hover:text-brand">{t.footer.track}</Link>
               <Link href="/condizioni-carte" className="block hover:text-brand">{t.footer.conditions}</Link>
               <Link href="/vendi" className="block hover:text-brand">{t.footer.sell}</Link>
               <Link href="/chi-siamo" className="block hover:text-brand">{t.footer.about}</Link>
