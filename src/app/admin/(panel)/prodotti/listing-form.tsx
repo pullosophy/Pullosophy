@@ -37,6 +37,7 @@ export type ListingValues = {
   stock: string;
   images: string;
   published: boolean;
+  releaseDate: string; // yyyy-mm-dd o vuoto
 };
 
 const field = "mt-1 w-full rounded border border-black/20 bg-transparent px-3 py-2";
@@ -267,6 +268,14 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
           <input name="stock" type="number" min="0" defaultValue={initial.stock} required className={field} />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-sm opacity-70">Data di uscita (solo per i preordini)</span>
+        <input name="releaseDate" type="date" defaultValue={initial.releaseDate} className={field} />
+        <span className="mt-1 block text-xs opacity-60">
+          Con una data futura il prodotto compare in home sotto “In arrivo” con l&apos;etichetta Preordine. Lascia vuoto per i prodotti disponibili.
+        </span>
+      </label>
 
       <ImageUploader initial={initial.images} suggested={kind === "SEALED" ? (sealedPick?.images ?? []) : []} />
 

@@ -112,6 +112,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Link href="/spedizioni" className="block hover:text-brand">{t.footer.shipping}</Link>
               <Link href="/condizioni-carte" className="block hover:text-brand">{t.footer.conditions}</Link>
               <Link href="/vendi" className="block hover:text-brand">{t.footer.sell}</Link>
+              <Link href="/chi-siamo" className="block hover:text-brand">{t.footer.about}</Link>
               <a href={`mailto:${company.email}`} className="block hover:text-brand">{company.email}</a>
             </div>
             <div className="text-sm space-y-2 text-white/80">

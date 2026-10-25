@@ -9,12 +9,21 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { t } = await getT();
   const categories = ["/pokemon?tipo=single", "/pokemon?tipo=sealed", "/pokemon?tipo=graded"].map((href, i) => ({ href, ...t.home.categories[i] }));
-  const latest = await db.listing.findMany({
-    where: { published: true, stock: { gt: 0 } },
-    include: { card: true, set: true, game: true },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-  });
+  const [latest, upcoming] = await Promise.all([
+    db.listing.findMany({
+      where: { published: true, stock: { gt: 0 } },
+      include: { card: true, set: true, game: true },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
+    // Preordini: prodotti con data di uscita futura.
+    db.listing.findMany({
+      where: { published: true, stock: { gt: 0 }, releaseDate: { gt: new Date() } },
+      include: { card: true, set: true, game: true },
+      orderBy: { releaseDate: "asc" },
+      take: 8,
+    }),
+  ]);
 
   return (
     <div className="space-y-16">
@@ -68,7 +77,32 @@ export default async function Home() {
         )}
       </section>
 
+      {upcoming.length > 0 && (
+        <section className="space-y-6">
+          <div>
+            <h2 className="font-display text-5xl">{t.home.upcoming}</h2>
+            <p className="text-black/60">{t.home.upcomingText}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            {upcoming.map((l) => (
+              <ListingCard key={l.id} listing={l} t={t} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <TrustBar t={t} />
+
+      <section className="grid gap-6 rounded-2xl border border-line p-8 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">{t.home.aboutKicker}</p>
+          <h2 className="font-display mt-2 text-4xl">{t.home.aboutTitle}</h2>
+          <p className="mt-2 max-w-2xl text-black/70">{t.home.aboutText}</p>
+        </div>
+        <Link href="/chi-siamo" className="rounded-full bg-foreground px-6 py-3 text-center font-semibold text-white hover:bg-brand">
+          {t.home.aboutLink}
+        </Link>
+      </section>
 
       <section className="rounded-2xl bg-foreground px-8 py-12 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">{t.home.soonKicker}</p>

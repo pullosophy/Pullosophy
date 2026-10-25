@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 const lang = (t: Dictionary, code: string) => t.languages[code as keyof typeof t.languages] ?? code;
 
 export default async function ListingPage({ params }: Params) {
-  const [{ game, id }, { t }] = await Promise.all([params, getT()]);
+  const [{ game, id }, { locale, t }] = await Promise.all([params, getT()]);
   const listing = await getListing(game, id);
   if (!listing) notFound();
 
@@ -144,6 +144,12 @@ export default async function ListingPage({ params }: Params) {
               </div>
             ))}
         </dl>
+        {listing.releaseDate && listing.releaseDate.getTime() > Date.now() && (
+          <p className="rounded-xl bg-brand/10 px-4 py-3 text-sm">
+            <strong className="text-brand">{t.product.preorder}</strong> · {t.product.shipsFrom}{" "}
+            {listing.releaseDate.toLocaleDateString(locale === "en" ? "en-GB" : "it-IT", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        )}
         {listing.stock > 0 ? (
           <form action={addToCart} className="flex gap-3 items-center">
             <input type="hidden" name="listingId" value={listing.id} />

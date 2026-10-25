@@ -83,6 +83,7 @@ const listingSchema = z
     stock: z.coerce.number().int().min(0),
     images: z.string().default(""),
     published: z.preprocess((v) => v === "on", z.boolean()),
+    releaseDate: optional(z.coerce.date()),
   })
   .superRefine((v, ctx) => {
     if (v.kind !== "SEALED" && !v.cardId) ctx.addIssue({ code: "custom", message: "Scegli la carta" });
@@ -121,6 +122,7 @@ export async function saveListing(_prev: ListingFormState, formData: FormData): 
       .map((s) => s.trim())
       .filter((s) => /^https:\/\//.test(s)),
     published: v.published,
+    releaseDate: v.releaseDate ?? null,
   };
 
   const id = formData.get("id");
