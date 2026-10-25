@@ -66,6 +66,39 @@ export async function importCards(formData: FormData) {
   redirect(`/admin/espansioni?ok=${encodeURIComponent(message)}`);
 }
 
+// Collega a mano un'espansione vecchia (senza tcgdexId) a una creata da TCGdex: sposta l'id e cancella il doppione vuoto.
+export async function linkSet(formData: FormData) {
+  await requireAdmin();
+  const { setId, targetId } = z.object({ setId: z.string().min(1), targetId: z.string().min(1) }).parse(Object.fromEntries(formData));
+  let message: string;
+  try {
+    const [set, target] = await Promise.all([
+      db.cardSet.findUniqueOrThrow({ where: { id: setId } }),
+      db.cardSet.findUniqueOrThrow({ where: { id: targetId }, include: { _count: { select: { cards: true, listings: true } } } }),
+    ]);
+    if (!target.tcgdexId) throw new Error("l'espansione scelta non viene da TCGdex");
+    if (target._count.cards > 0 || target._count.listings > 0) throw new Error("l'espansione scelta ha già carte o prodotti: non posso unirla");
+    await db.$transaction([
+      db.cardSet.delete({ where: { id: target.id } }),
+      db.cardSet.update({
+        where: { id: set.id },
+        data: {
+          tcgdexId: target.tcgdexId,
+          logoUrl: set.logoUrl ?? target.logoUrl,
+          symbolUrl: set.symbolUrl ?? target.symbolUrl,
+          releaseDate: set.releaseDate ?? target.releaseDate,
+          series: set.series ?? target.series,
+        },
+      }),
+    ]);
+    message = `"${set.name}" collegata a TCGdex (${target.tcgdexId}): ora puoi premere "Aggiorna carte"`;
+  } catch (err) {
+    message = `Errore: ${(err as Error).message}`;
+  }
+  revalidatePath("/admin/espansioni");
+  redirect(`/admin/espansioni?ok=${encodeURIComponent(message)}`);
+}
+
 const optional = <T extends z.ZodType>(schema: T) =>
   z.preprocess((v) => (v === "" || v === null ? undefined : v), schema.optional());
 

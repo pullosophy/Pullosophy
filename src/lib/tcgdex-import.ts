@@ -64,7 +64,10 @@ async function pokemonGameId(db: PrismaClient) {
 export async function importPokemonSets(db: PrismaClient) {
   const gameId = await pokemonGameId(db);
   const remote = await get<SetResume[]>("/sets");
-  const existing = await db.cardSet.findMany({ where: { gameId }, select: { id: true, name: true, tcgdexId: true } });
+  const existing = await db.cardSet.findMany({
+    where: { gameId },
+    select: { id: true, name: true, tcgdexId: true, logoUrl: true, symbolUrl: true },
+  });
   const byTcgdex = new Map(existing.filter((s) => s.tcgdexId).map((s) => [s.tcgdexId!, s]));
   const byName = new Map(existing.filter((s) => !s.tcgdexId).map((s) => [norm(s.name), s]));
   const used = new Set(byTcgdex.keys());
@@ -73,20 +76,36 @@ export async function importPokemonSets(db: PrismaClient) {
 
   const toCreate: SetResume[] = [];
   for (const r of remote) {
-    const assets = { logoUrl: r.logo ? `${r.logo}.png` : undefined, symbolUrl: r.symbol ? `${r.symbol}.png` : undefined };
+    // Loghi e simboli TCGdex solo dove mancano: quelli gia' presenti (vecchia API) restano, perche' su TCGdex non tutti esistono.
     const known = byTcgdex.get(r.id);
     if (known) {
-      await db.cardSet.update({ where: { id: known.id }, data: { name: r.name, ...assets } });
+      await db.cardSet.update({
+        where: { id: known.id },
+        data: {
+          logoUrl: known.logoUrl ?? (r.logo ? `${r.logo}.png` : null),
+          symbolUrl: known.symbolUrl ?? (r.symbol ? `${r.symbol}.png` : null),
+        },
+      });
       continue;
     }
-    const match = byName.get(norm(r.name));
+    // Nome uguale, oppure un nome contenuto nell'altro (es. "Mega Evolution 30th Celebration" / "30th Celebration").
+    const rn = norm(r.name);
+    let match = byName.get(rn);
+    if (!match && rn.length >= 5) {
+      const fuzzy = [...byName.entries()].filter(([n]) => n.length >= 5 && (n.includes(rn) || rn.includes(n)));
+      if (fuzzy.length === 1) match = fuzzy[0][1];
+    }
     if (match && !used.has(r.id)) {
       // Stesso nome: e' l'espansione importata in passato, la colleghiamo a TCGdex senza duplicarla.
       await db.cardSet.update({
         where: { id: match.id },
-        data: { tcgdexId: r.id, logoUrl: assets.logoUrl ?? undefined, symbolUrl: assets.symbolUrl ?? undefined },
+        data: {
+          tcgdexId: r.id,
+          logoUrl: match.logoUrl ?? (r.logo ? `${r.logo}.png` : null),
+          symbolUrl: match.symbolUrl ?? (r.symbol ? `${r.symbol}.png` : null),
+        },
       });
-      byName.delete(norm(r.name));
+      byName.delete(norm(match.name));
       used.add(r.id);
       linked++;
       continue;
