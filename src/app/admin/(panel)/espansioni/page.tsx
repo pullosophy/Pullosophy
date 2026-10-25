@@ -44,7 +44,7 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
             <li key={s.id} className="flex items-center gap-3 py-2">
               <span className="grid h-6 w-6 shrink-0 place-items-center">
                 {s.symbolUrl ? (
-                  <SafeImage src={s.symbolUrl} alt="" className="h-5 w-5 object-contain" fallback={<span className="h-2 w-2 rounded-full bg-black/15" />} />
+                  <SafeImage src={s.symbolUrl} alt="" shape="symbol" className="h-5 w-5 object-contain" fallback={<span className="h-2 w-2 rounded-full bg-black/15" />} />
                 ) : (
                   <span className="h-2 w-2 rounded-full bg-black/15" />
                 )}

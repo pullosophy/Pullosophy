@@ -124,6 +124,7 @@ export default async function ListingPage({ params }: Params) {
             <SafeImage
               src={src}
               alt={listing.title}
+              shape={src === listing.set?.logoUrl ? "logo" : undefined}
               className="mx-auto max-h-[70vh] w-auto rounded-lg"
               fallback={<p className="py-16 text-center font-display text-4xl text-black/10">PULLOSOPHY</p>}
             />
