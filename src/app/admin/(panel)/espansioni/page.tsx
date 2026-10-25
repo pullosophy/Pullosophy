@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { importCards, importSets } from "@/app/actions/admin";
+import { importCards, importSets, linkSet } from "@/app/actions/admin";
 import { SubmitButton } from "../submit-button";
 
 export const maxDuration = 60;
@@ -8,9 +8,11 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
   const { ok } = await searchParams;
   const sets = await db.cardSet.findMany({
     where: { game: { slug: "pokemon" } },
-    include: { _count: { select: { cards: true } } },
+    include: { _count: { select: { cards: true, listings: true } } },
     orderBy: { releaseDate: "desc" },
   });
+  // Espansioni create da TCGdex ancora vuote: candidate per collegare a mano quelle vecchie con nome diverso.
+  const candidates = sets.filter((s) => s.tcgdexId && s._count.cards === 0 && s._count.listings === 0);
 
   return (
     <div className="space-y-5">
@@ -28,7 +30,8 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
       <p className="text-sm opacity-70">
         Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). Importa le carte solo delle espansioni che vendi: servono per
         creare carte singole e gradate. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
-        ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato.
+        ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato. Se un&apos;espansione risulta “non collegata a TCGdex”, scegli
+        dal menu “Collega a…” quella con lo stesso contenuto (TCGdex a volte usa un nome diverso) e premi “Collega”.
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>
@@ -44,12 +47,29 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
                   {s.series} · {s.tcgdexId ?? "non collegata a TCGdex"} · {s._count.cards} carte importate
                 </p>
               </div>
-              <form action={importCards}>
-                <input type="hidden" name="setId" value={s.id} />
-                <SubmitButton pending="Importo…" variant="outline">
-                  {s._count.cards > 0 ? "Aggiorna carte" : "Importa carte"}
-                </SubmitButton>
-              </form>
+              {s.tcgdexId ? (
+                <form action={importCards}>
+                  <input type="hidden" name="setId" value={s.id} />
+                  <SubmitButton pending="Importo…" variant="outline">
+                    {s._count.cards > 0 ? "Aggiorna carte" : "Importa carte"}
+                  </SubmitButton>
+                </form>
+              ) : candidates.length > 0 ? (
+                <form action={linkSet} className="flex items-center gap-2">
+                  <input type="hidden" name="setId" value={s.id} />
+                  <select name="targetId" required className="max-w-[14rem] rounded border border-black/20 px-2 py-2 text-sm">
+                    <option value="">Collega a…</option>
+                    {candidates.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.tcgdexId})
+                      </option>
+                    ))}
+                  </select>
+                  <SubmitButton pending="Collego…" variant="outline">Collega</SubmitButton>
+                </form>
+              ) : (
+                <span className="text-xs opacity-60">Premi “Aggiorna elenco espansioni”</span>
+              )}
             </li>
           ))}
         </ul>
