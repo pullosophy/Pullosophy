@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import { company, previewMode, socials } from "@/lib/company";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -19,6 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     title: { default: t.meta.title, template: "%s · Pullosophy" },
     description: t.meta.description,
+    // Verifica proprietà per Google Search Console (meta tag), se impostata su Vercel.
+    verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   };
 }
 
@@ -127,6 +130,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             © {new Date().getFullYear()} Pullosophy · {t.footer.trademark}
           </p>
         </footer>
+        <Analytics />
       </body>
     </html>
   );

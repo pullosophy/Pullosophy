@@ -45,6 +45,12 @@ Per scrivere ai clienti serve un dominio verificato su Resend (Domains → Add d
 a quel punto imposta `EMAIL_FROM="Pullosophy <ordini@tuodominio.it>"`. Senza dominio, Resend consegna
 solo all'email del proprietario dell'account (utile per provare).
 
+## Statistiche e Google
+
+Le visite si vedono con Vercel Web Analytics (Vercel → progetto → Analytics → Enable; il componente è già nel layout).
+Per Google Search Console: aggiungi la proprietà con il metodo "Tag HTML", copia solo il valore `content`
+nella variabile `GOOGLE_SITE_VERIFICATION` su Vercel, fai Redeploy e premi Verifica. Poi invia la sitemap `/sitemap.xml`.
+
 ## Pannello admin
 
 `/admin`, protetto dalla password `ADMIN_PASSWORD`. Per caricare foto dal pannello serve Vercel Blob: Vercel → Storage → Create → Blob, collegato al progetto (aggiunge `BLOB_READ_WRITE_TOKEN` da solo). Da lì:
