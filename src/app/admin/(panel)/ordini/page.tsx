@@ -14,7 +14,8 @@ const statusLabels: Record<OrderStatus, string> = {
 
 type Address = { name?: string; address?: Record<string, string | null> };
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
+  const { ok } = await searchParams;
   const orders = await db.order.findMany({
     where: { status: { not: "CANCELLED" } },
     include: { items: true },
@@ -24,6 +25,12 @@ export default async function OrdersPage() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-bold">Ordini</h1>
+      {ok && (
+        <p className={`rounded px-3 py-2 text-sm ${ok.includes("NON") || ok.includes("mancante") ? "bg-red-600/15" : "bg-green-600/15"}`}>{ok}</p>
+      )}
+      <p className="text-sm opacity-70">
+        Il cliente riceve una email di conferma al pagamento e una di spedizione quando metti lo stato su “Spedito” (con il tracking se inserito).
+      </p>
       {orders.length === 0 && <p className="opacity-70">Nessun ordine ancora.</p>}
       {orders.map((o) => {
         const ship = o.shippingAddress as Address | null;

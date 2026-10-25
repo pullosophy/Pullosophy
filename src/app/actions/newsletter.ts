@@ -3,7 +3,9 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getLocale } from "@/lib/i18n";
-import { WELCOME_CODE, ensureWelcomeCode } from "@/lib/welcome";
+import { WELCOME_CODE, WELCOME_PERCENT, ensureWelcomeCode } from "@/lib/welcome";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/email-templates";
 
 export type SubscribeState = { ok?: boolean; code?: string; error?: "email" | "generic" };
 
@@ -22,6 +24,10 @@ export async function subscribe(_prev: SubscribeState, formData: FormData): Prom
     });
     // Il codice sconto esiste su Stripe; se Stripe non risponde l'iscrizione resta valida.
     await ensureWelcomeCode().catch((err) => console.error("[newsletter] Stripe promo code:", err));
+    // Email con il codice: se fallisce, il codice e' comunque mostrato nel pop-up.
+    await sendEmail({ to: parsed.data, ...welcomeEmail(locale, WELCOME_CODE, WELCOME_PERCENT, newReleases) }).catch((err) =>
+      console.error("[newsletter] email benvenuto:", err),
+    );
     return { ok: true, code: WELCOME_CODE };
   } catch (err) {
     console.error("[newsletter]", err);

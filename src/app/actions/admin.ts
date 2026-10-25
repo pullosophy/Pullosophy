@@ -7,6 +7,8 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { ADMIN_COOKIE, adminToken } from "@/lib/admin-auth";
 import { importPokemonCards, importPokemonSets } from "@/lib/pokemon-import";
+import { sendEmail } from "@/lib/email";
+import { orderShippedEmail } from "@/lib/email-templates";
 
 // Ogni azione ricontrolla il cookie: il middleware protegge le pagine, non le server action.
 async function requireAdmin() {
@@ -138,6 +140,23 @@ export async function updateOrder(formData: FormData) {
       trackingNumber: z.string().trim().default(""),
     })
     .parse(Object.fromEntries(formData));
-  await db.order.update({ where: { id }, data: { status, trackingNumber: trackingNumber || null } });
+  const before = await db.order.findUnique({ where: { id }, select: { status: true } });
+  const order = await db.order.update({
+    where: { id },
+    data: { status, trackingNumber: trackingNumber || null },
+    include: { items: true },
+  });
+  // Avviso di spedizione al cliente solo quando l'ordine passa a SPEDITO (non a ogni salvataggio).
+  let notice = "";
+  if (status === "SHIPPED" && before?.status !== "SHIPPED") {
+    try {
+      const sent = await sendEmail({ to: order.email, ...orderShippedEmail(order) });
+      notice = "skipped" in sent ? "Email non inviata: RESEND_API_KEY mancante" : `Email di spedizione inviata a ${order.email}`;
+    } catch (err) {
+      console.error("[admin] email spedizione:", err);
+      notice = `Email di spedizione NON inviata: ${(err as Error).message}`;
+    }
+  }
   revalidatePath("/admin/ordini");
+  if (notice) redirect(`/admin/ordini?ok=${encodeURIComponent(notice)}`);
 }
