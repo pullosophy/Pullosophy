@@ -28,7 +28,7 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
       <p className="text-sm opacity-70">
         Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). Importa le carte solo delle espansioni che vendi: servono per
         creare carte singole e gradate. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
-        ogni tanto per averli freschi. Se l'import si ferma a metà, ripremi il tasto: riprende da dove era arrivato.
+        ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato.
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>
