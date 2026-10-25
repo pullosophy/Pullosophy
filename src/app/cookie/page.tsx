@@ -15,6 +15,9 @@ export default function CookiePage() {
           <code>cart</code>: ricorda gli articoli nel tuo carrello tra una pagina e l&apos;altra. Dura 30 giorni.
         </li>
         <li>
+          <code>lang</code>: ricorda la lingua scelta (italiano o inglese). Dura un anno.
+        </li>
+        <li>
           <code>admin</code>: usato solo dal gestore del negozio per accedere al pannello di amministrazione.
         </li>
         <li>Cookie di Stripe nella pagina di pagamento, necessari a prevenire le frodi.</li>

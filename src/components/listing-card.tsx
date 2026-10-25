@@ -1,17 +1,18 @@
 import Link from "next/link";
 import type { Card, CardSet, Game, Listing } from "@prisma/client";
 import { formatPrice } from "@/lib/format";
-import { conditionLabels, sealedLabels } from "@/lib/labels";
+import { conditionLabels } from "@/lib/labels";
+import type { Dictionary } from "@/lib/i18n";
 
-type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game: Game } };
+type Props = { listing: Listing & { card: Card | null; set: CardSet | null; game: Game }; t: Dictionary };
 
-export function ListingCard({ listing: l }: Props) {
+export function ListingCard({ listing: l, t }: Props) {
   const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall;
   const badge =
     l.kind === "GRADED"
       ? `${l.grader} ${l.grade}`
       : l.kind === "SEALED"
-        ? (l.sealedType && sealedLabels[l.sealedType]) || "Sigillato"
+        ? (l.sealedType && t.sealed[l.sealedType]) || t.product.sealed
         : l.condition && conditionLabels[l.condition];
 
   return (

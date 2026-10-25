@@ -5,21 +5,23 @@ import type { Condition, ListingKind, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ListingCard } from "@/components/listing-card";
 import { FilterForm } from "@/components/filter-form";
-import { conditionLabels, languageLabels } from "@/lib/labels";
+import { conditionLabels } from "@/lib/labels";
+import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const kinds: Record<string, { kind: ListingKind; label: string }> = {
-  single: { kind: "SINGLE", label: "Singole" },
-  sealed: { kind: "SEALED", label: "Sigillati" },
-  graded: { kind: "GRADED", label: "Gradate" },
+const kinds: Record<string, { kind: ListingKind; label: "singles" | "sealed" | "graded" }> = {
+  single: { kind: "SINGLE", label: "singles" },
+  sealed: { kind: "SEALED", label: "sealed" },
+  graded: { kind: "GRADED", label: "graded" },
 };
 
-const sorts: Record<string, { label: string; orderBy: Prisma.ListingOrderByWithRelationInput }> = {
-  recenti: { label: "Più recenti", orderBy: { createdAt: "desc" } },
-  "prezzo-asc": { label: "Prezzo crescente", orderBy: { priceCents: "asc" } },
-  "prezzo-desc": { label: "Prezzo decrescente", orderBy: { priceCents: "desc" } },
+const sorts: Record<"recenti" | "prezzo-asc" | "prezzo-desc", Prisma.ListingOrderByWithRelationInput> = {
+  recenti: { createdAt: "desc" },
+  "prezzo-asc": { priceCents: "asc" },
+  "prezzo-desc": { priceCents: "desc" },
 };
+type SortKey = keyof typeof sorts;
 
 type Search = {
   tipo?: string;
@@ -38,22 +40,20 @@ const euroToCents = (v?: string) => {
 };
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<Search> }): Promise<Metadata> {
-  const { game: slug } = await params;
-  const { tipo } = await searchParams;
+  const [{ game: slug }, { tipo }, { t }] = await Promise.all([params, searchParams, getT()]);
   const game = await db.game.findUnique({ where: { slug } });
   if (!game) return {};
-  const label = tipo && kinds[tipo] ? `${kinds[tipo].label} ${game.name}` : `Carte ${game.name}`;
+  const label = tipo && kinds[tipo] ? `${t.nav[kinds[tipo].label]} ${game.name}` : `${t.catalog.cards} ${game.name}`;
   return {
     title: label,
-    description: `${label}: singole, sigillati e gradate PSA, BGS, CGC. Spedizione in tutta Europa da Mantova.`,
+    description: `${label}: ${t.catalog.metaDescription}`,
   };
 }
 
 export default async function GamePage({ params, searchParams }: { params: Promise<{ game: string }>; searchParams: Promise<Search> }) {
-  const { game: slug } = await params;
-  const sp = await searchParams;
+  const [{ game: slug }, sp, { t }] = await Promise.all([params, searchParams, getT()]);
   const { tipo, set, lingua, cond, q } = sp;
-  const ordina = sp.ordina && sorts[sp.ordina] ? sp.ordina : "recenti";
+  const ordina: SortKey = sp.ordina && sp.ordina in sorts ? (sp.ordina as SortKey) : "recenti";
   const min = euroToCents(sp.min);
   const max = euroToCents(sp.max);
 
@@ -78,7 +78,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
   };
 
   const [listings, total, sets, languages] = await Promise.all([
-    db.listing.findMany({ where, include: { card: true, set: true, game: true }, orderBy: sorts[ordina].orderBy, take: 60 }),
+    db.listing.findMany({ where, include: { card: true, set: true, game: true }, orderBy: sorts[ordina], take: 60 }),
     db.listing.count({ where }),
     // Solo le espansioni e le lingue che hanno prodotti in vendita.
     db.cardSet.findMany({
@@ -98,10 +98,10 @@ export default async function GamePage({ params, searchParams }: { params: Promi
 
   const chips: { label: string; href: string }[] = [
     set && { label: sets.find((s) => s.slug === set)?.name ?? set, href: query({ set: undefined }) },
-    lingua && { label: languageLabels[lingua] ?? lingua, href: query({ lingua: undefined }) },
+    lingua && { label: t.languages[lingua as keyof typeof t.languages] ?? lingua, href: query({ lingua: undefined }) },
     cond && { label: conditionLabels[cond as Condition] ?? cond, href: query({ cond: undefined }) },
-    sp.min && { label: `da ${sp.min} €`, href: query({ min: undefined }) },
-    sp.max && { label: `fino a ${sp.max} €`, href: query({ max: undefined }) },
+    sp.min && { label: `${t.catalog.from} ${sp.min} €`, href: query({ min: undefined }) },
+    sp.max && { label: `${t.catalog.upTo} ${sp.max} €`, href: query({ max: undefined }) },
     q && { label: `“${q}”`, href: query({ q: undefined }) },
   ].filter((c): c is { label: string; href: string } => !!c);
 
@@ -114,24 +114,25 @@ export default async function GamePage({ params, searchParams }: { params: Promi
   return (
     <div className="space-y-8">
       <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">Catalogo</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand">{t.catalog.kicker}</p>
         <h1 className="font-display text-6xl">
           {game.name}
-          {tipo && kinds[tipo] && <span className="text-black/30"> · {kinds[tipo].label}</span>}
+          {tipo && kinds[tipo] && <span className="text-black/30"> · {t.nav[kinds[tipo].label]}</span>}
         </h1>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={query({ tipo: undefined, cond: undefined })} className={pill(!tipo)}>Tutto</Link>
+        <Link href={query({ tipo: undefined, cond: undefined })} className={pill(!tipo)}>{t.catalog.all}</Link>
         {Object.entries(kinds).map(([key, k]) => (
           <Link key={key} href={query({ tipo: key, cond: key === "single" ? cond : undefined })} className={pill(tipo === key)}>
-            {k.label}
+            {t.nav[k.label]}
           </Link>
         ))}
       </div>
 
       <FilterForm
         action={`/${game.slug}`}
+        labels={{ open: t.catalog.filters, close: t.catalog.hideFilters, apply: t.catalog.apply }}
         defaultOpen={chips.length > 0}
         search={
           <>
@@ -139,7 +140,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
             <input
               name="q"
               defaultValue={q}
-              placeholder="Cerca per nome, carta o espansione…"
+              placeholder={t.catalog.search}
               className="w-full rounded-full border border-line bg-muted px-4 py-2.5 text-sm outline-none focus:border-foreground"
             />
           </>
@@ -147,32 +148,32 @@ export default async function GamePage({ params, searchParams }: { params: Promi
         filters={
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
             <select name="set" defaultValue={set ?? ""} className={`${field} col-span-2`}>
-              <option value="">Tutte le espansioni</option>
+              <option value="">{t.catalog.allSets}</option>
               {sets.map((s) => (
                 <option key={s.slug} value={s.slug}>{s.name}</option>
               ))}
             </select>
             <select name="lingua" defaultValue={lingua ?? ""} className={field}>
-              <option value="">Tutte le lingue</option>
+              <option value="">{t.catalog.allLanguages}</option>
               {languages.map(({ language }) => (
-                <option key={language} value={language}>{languageLabels[language] ?? language}</option>
+                <option key={language} value={language}>{t.languages[language as keyof typeof t.languages] ?? language}</option>
               ))}
             </select>
             {(!tipo || tipo === "single") && (
               <select name="cond" defaultValue={cond ?? ""} className={field}>
-                <option value="">Ogni condizione</option>
+                <option value="">{t.catalog.anyCondition}</option>
                 {Object.entries(conditionLabels).map(([v, label]) => (
                   <option key={v} value={v}>{label}</option>
                 ))}
               </select>
             )}
             <div className="flex gap-2">
-              <input name="min" inputMode="decimal" defaultValue={sp.min} placeholder="€ min" className={field} />
-              <input name="max" inputMode="decimal" defaultValue={sp.max} placeholder="€ max" className={field} />
+              <input name="min" inputMode="decimal" defaultValue={sp.min} placeholder={t.catalog.min} className={field} />
+              <input name="max" inputMode="decimal" defaultValue={sp.max} placeholder={t.catalog.max} className={field} />
             </div>
             <select name="ordina" defaultValue={ordina} className={field}>
-              {Object.entries(sorts).map(([k, s]) => (
-                <option key={k} value={k}>{s.label}</option>
+              {(Object.keys(sorts) as SortKey[]).map((k) => (
+                <option key={k} value={k}>{t.catalog.sorts[k]}</option>
               ))}
             </select>
           </div>
@@ -180,7 +181,7 @@ export default async function GamePage({ params, searchParams }: { params: Promi
       />
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-black/50">{total} {total === 1 ? "prodotto" : "prodotti"}</span>
+        <span className="text-black/50">{total} {total === 1 ? t.catalog.product : t.catalog.products}</span>
         {chips.map((c) => (
           <Link key={c.label} href={c.href} className="rounded-full bg-muted px-3 py-1 hover:bg-line">
             {c.label} ✕
@@ -188,17 +189,17 @@ export default async function GamePage({ params, searchParams }: { params: Promi
         ))}
         {chips.length > 1 && (
           <Link href={query({ set: undefined, lingua: undefined, cond: undefined, min: undefined, max: undefined, q: undefined })} className="font-semibold hover:text-brand">
-            Azzera filtri
+            {t.catalog.reset}
           </Link>
         )}
       </div>
 
       {listings.length === 0 ? (
-        <p className="rounded-2xl bg-muted p-10 text-center text-black/60">Nessun prodotto con questi filtri.</p>
+        <p className="rounded-2xl bg-muted p-10 text-center text-black/60">{t.catalog.empty}</p>
       ) : (
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
           {listings.map((l) => (
-            <ListingCard key={l.id} listing={l} />
+            <ListingCard key={l.id} listing={l} t={t} />
           ))}
         </div>
       )}

@@ -10,11 +10,13 @@ export function FilterForm({
   search,
   filters,
   defaultOpen,
+  labels,
 }: {
   action: string;
   search: React.ReactNode;
   filters: React.ReactNode;
   defaultOpen: boolean;
+  labels: { open: string; close: string; apply: string };
 }) {
   const ref = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -44,12 +46,12 @@ export function FilterForm({
     >
       {search}
       <button type="button" onClick={() => setOpen(!open)} className="text-sm font-semibold sm:hidden">
-        {open ? "Nascondi filtri" : "Filtri e ordinamento"}
+        {open ? labels.close : labels.open}
       </button>
       <div className={open ? "block" : "hidden sm:block"}>
         {filters}
         <button className="mt-2 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-white sm:hidden">
-          Applica
+          {labels.apply}
         </button>
       </div>
     </form>
