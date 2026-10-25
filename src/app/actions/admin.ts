@@ -131,6 +131,15 @@ export async function saveListing(_prev: ListingFormState, formData: FormData): 
   redirect("/admin/prodotti");
 }
 
+const orderStatusLabels: Record<string, string> = {
+  PENDING: "In attesa di pagamento",
+  PAID: "Pagato, da spedire",
+  SHIPPED: "Spedito",
+  DELIVERED: "Consegnato",
+  CANCELLED: "Annullato",
+  REFUNDED: "Rimborsato",
+};
+
 export async function updateOrder(formData: FormData) {
   await requireAdmin();
   const { id, status, trackingNumber } = z
@@ -147,16 +156,29 @@ export async function updateOrder(formData: FormData) {
     include: { items: true },
   });
   // Avviso di spedizione al cliente solo quando l'ordine passa a SPEDITO (non a ogni salvataggio).
-  let notice = "";
-  if (status === "SHIPPED" && before?.status !== "SHIPPED") {
-    try {
-      const sent = await sendEmail({ to: order.email, ...orderShippedEmail(order) });
-      notice = "skipped" in sent ? "Email non inviata: RESEND_API_KEY mancante" : `Email di spedizione inviata a ${order.email}`;
-    } catch (err) {
-      console.error("[admin] email spedizione:", err);
-      notice = `Email di spedizione NON inviata: ${(err as Error).message}`;
-    }
-  }
+  let notice = `Ordine ${order.id.slice(-8).toUpperCase()} salvato: ${orderStatusLabels[status]}`;
+  if (status === "SHIPPED" && before?.status !== "SHIPPED") notice += await shippedEmailNotice(order);
   revalidatePath("/admin/ordini");
-  if (notice) redirect(`/admin/ordini?ok=${encodeURIComponent(notice)}`);
+  redirect(`/admin/ordini?ok=${encodeURIComponent(notice)}`);
+}
+
+// Tasto "Reinvia email di spedizione" (es. dopo aver corretto il tracking o configurato Resend).
+export async function resendShippingEmail(formData: FormData) {
+  await requireAdmin();
+  const id = z.string().min(1).parse(formData.get("id"));
+  const order = await db.order.findUniqueOrThrow({ where: { id }, include: { items: true } });
+  const notice = `Ordine ${order.id.slice(-8).toUpperCase()}` + (await shippedEmailNotice(order));
+  redirect(`/admin/ordini?ok=${encodeURIComponent(notice)}`);
+}
+
+async function shippedEmailNotice(order: Parameters<typeof orderShippedEmail>[0]) {
+  try {
+    const sent = await sendEmail({ to: order.email, ...orderShippedEmail(order) });
+    return "skipped" in sent
+      ? ". Email NON inviata: manca RESEND_API_KEY su Vercel (poi serve un Redeploy)"
+      : `. Email di spedizione inviata a ${order.email}`;
+  } catch (err) {
+    console.error("[admin] email spedizione:", err);
+    return `. Email NON inviata: ${(err as Error).message}`;
+  }
 }
