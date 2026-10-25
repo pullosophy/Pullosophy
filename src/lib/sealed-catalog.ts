@@ -10,11 +10,14 @@ export type SealedTemplate = {
   label: string; // voce nel menu admin
   title: string; // titolo proposto per il negozio
   image: string | null; // logo espansione come anteprima/segnaposto
+  images: string[]; // foto già caricate su un prodotto uguale (riusabili)
 };
 
 type SetInfo = { name: string; series: string | null; releaseDate: Date | null; logoUrl: string | null };
 
-export function sealedTemplates(set: SetInfo): SealedTemplate[] {
+type Existing = { sealedType: SealedType; title: string; images: string[] };
+
+export function sealedTemplates(set: SetInfo, existing: Existing[] = []): SealedTemplate[] {
   // Data sconosciuta (espansione inserita a mano): proponiamo tutti i formati.
   const year = set.releaseDate?.getFullYear() ?? 9999;
   const modern = year >= 2017; // Sole e Luna in poi: formati attuali
@@ -32,11 +35,13 @@ export function sealedTemplates(set: SetInfo): SealedTemplate[] {
     ["collection", "COLLECTION_BOX", "Collezione speciale"],
     ["other", "OTHER", "Altro (scrivo io il titolo)"],
   ];
-  return items.map(([key, sealedType, label]) => ({
-    key,
-    sealedType,
-    label,
-    title: key === "other" ? "" : `${label.replace(/ \(.*\)$/, "")} ${set.name}`,
-    image: set.logoUrl,
-  }));
+  return items.map(([key, sealedType, label]) => {
+    const base = label.replace(/ \(.*\)$/, "");
+    const title = key === "other" ? "" : `${base} ${set.name}`;
+    // Foto di un prodotto uguale già in catalogo: stesso titolo proposto, altrimenti stesso tipo.
+    const match =
+      existing.find((e) => e.images.length > 0 && e.title.toLowerCase().startsWith(base.toLowerCase()) && e.sealedType === sealedType) ??
+      existing.find((e) => e.images.length > 0 && e.sealedType === sealedType && key !== "other");
+    return { key, sealedType, label, title, image: set.logoUrl, images: match?.images ?? [] };
+  });
 }

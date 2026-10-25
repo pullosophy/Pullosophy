@@ -15,8 +15,10 @@ async function shrink(file: File): Promise<Blob> {
   return new Promise((res) => canvas.toBlob((b) => res(b ?? file), "image/jpeg", 0.88));
 }
 
-export function ImageUploader({ initial }: { initial: string }) {
+// `suggested`: foto già caricate su un prodotto uguale (es. stesso ETB in un'altra lingua), riusabili con un tap.
+export function ImageUploader({ initial, suggested = [] }: { initial: string; suggested?: string[] }) {
   const [urls, setUrls] = useState(initial.split(/\s+/).filter(Boolean));
+  const missing = suggested.filter((u) => !urls.includes(u));
   const [busy, setBusy] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -55,6 +57,17 @@ export function ImageUploader({ initial }: { initial: string }) {
     <div className="space-y-2">
       <span className="text-sm opacity-70">Foto (la prima è quella principale). Per le gradate metti foto reali fronte e retro.</span>
       <input type="hidden" name="images" value={urls.join("\n")} />
+      {missing.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setUrls((u) => [...u, ...missing])}
+          className="flex items-center gap-2 rounded-lg border border-dashed border-brand bg-brand/5 px-3 py-2 text-sm"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={missing[0]} alt="" className="h-10 w-8 rounded object-cover" />
+          <span>{missing.length === 1 ? "Usa la foto già caricata" : `Usa le ${missing.length} foto già caricate`} per questo prodotto</span>
+        </button>
+      )}
       {urls.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {urls.map((u, i) => (
