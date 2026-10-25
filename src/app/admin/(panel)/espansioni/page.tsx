@@ -26,7 +26,8 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         </p>
       )}
       <p className="text-sm opacity-70">
-        Importa le carte solo delle espansioni che vendi: servono per creare carte singole e gradate.
+        Importa le carte solo delle espansioni che vendi: servono per creare carte singole e gradate. Con le carte arrivano
+        anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte” ogni tanto per averli freschi.
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>

@@ -50,6 +50,12 @@ model Card {
   supertype  String? // Pokémon, Trainer, Energy, Leader, Character...
   imageSmall String?
   imageLarge String?
+  // Prezzi di riferimento Cardmarket (dalla Pokémon TCG API), in centesimi: aiutano a prezzare dall'admin.
+  cmTrendCents   Int?
+  cmAvgCents     Int?
+  cmLowCents     Int?
+  cmUrl          String?
+  cmUpdatedAt    DateTime?
   listings   Listing[]
 
   @@unique([setId, number])
