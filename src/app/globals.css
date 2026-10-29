@@ -37,3 +37,14 @@ body {
 .legal ul { list-style: disc; padding-left: 1.25rem; }
 .legal li { margin-top: 0.25rem; }
 .legal a { text-decoration: underline; }
+
+/* Striscia in cima: le carte scorrono da destra a sinistra, si fermano al passaggio del mouse. */
+@keyframes top-strip-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.top-strip-track { animation: top-strip-scroll 60s linear infinite; }
+.top-strip:hover .top-strip-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .top-strip-track { animation: none; }
+}

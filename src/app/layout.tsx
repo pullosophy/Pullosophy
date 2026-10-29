@@ -8,6 +8,7 @@ import { cartCount } from "@/lib/cart-count";
 import { getT } from "@/lib/i18n";
 import { LanguageSwitch } from "@/components/language-switch";
 import { WelcomePopup } from "@/components/welcome-popup";
+import { TopStrip, SocialIcon } from "@/components/top-strip";
 import { WELCOME_PERCENT } from "@/lib/welcome";
 import "./globals.css";
 
@@ -38,9 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {previewMode && (
           <div className="bg-brand px-4 py-1.5 text-center text-xs font-semibold text-white">{t.previewBanner}</div>
         )}
-        <div className="bg-foreground text-white text-center text-xs py-1.5 px-4">
-          {t.topbar}
-        </div>
+        <TopStrip text={t.topbar} />
         <header className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
           <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-6">
             <Logo />
@@ -148,21 +147,5 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Analytics />
       </body>
     </html>
-  );
-}
-
-function SocialIcon({ name }: { name: string }) {
-  if (name === "TikTok")
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M16.5 3c.4 2.3 1.9 3.9 4.2 4.1v3.1c-1.6 0-3-.5-4.2-1.3v6.4a5.7 5.7 0 1 1-5.7-5.7c.3 0 .6 0 .9.1v3.2a2.6 2.6 0 1 0 1.7 2.4V3h3.1z" />
-      </svg>
-    );
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-    </svg>
   );
 }
