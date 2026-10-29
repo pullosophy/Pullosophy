@@ -118,6 +118,7 @@ model Listing {
   grade      Decimal?    @db.Decimal(3, 1) // GRADED, es. 10 o 9.5
   certNumber String? // GRADED
   priceCents Int
+  compareAtCents Int? // prezzo prima dello sconto, mostrato barrato ("Offerta")
   stock      Int         @default(0)
   images     String[] // foto reali (obbligatorie per le gradate)
   description String? // testo libero mostrato nella scheda (es. contenuto di un box)

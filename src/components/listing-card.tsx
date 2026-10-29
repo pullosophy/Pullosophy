@@ -3,7 +3,7 @@ import type { Locale } from "@/lib/i18n";
 import Link from "next/link";
 import { SafeImage } from "@/components/safe-image";
 import type { Card, CardSet, Game, Listing } from "@prisma/client";
-import { formatPrice } from "@/lib/format";
+import { Price, discountPercent } from "@/components/price";
 import { conditionLabels } from "@/lib/labels";
 import type { Dictionary } from "@/lib/i18n";
 
@@ -14,6 +14,7 @@ export function ListingCard({ listing: l, t, locale }: Props) {
   const image = l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall ?? (l.kind === "SEALED" ? l.set?.logoUrl : null);
   const isLogo = !!image && image === l.set?.logoUrl;
   const preorder = !!l.releaseDate && l.releaseDate.getTime() > Date.now();
+  const discount = discountPercent(l.priceCents, l.compareAtCents);
   const badge =
     l.kind === "GRADED"
       ? `${l.grader} ${l.grade}`
@@ -61,11 +62,16 @@ export function ListingCard({ listing: l, t, locale }: Props) {
             {t.product.preorder}
           </span>
         )}
+        {discount > 0 && !preorder && l.stock > 0 && (
+          <span className="absolute bottom-2 left-2 rounded bg-green-600 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-white">
+            {t.product.sale} −{discount}%
+          </span>
+        )}
       </div>
       <div className="mt-2 space-y-0.5">
         <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">{l.title}</p>
         {l.set && <p className="text-xs text-black/50">{setName(l.set, locale)}</p>}
-        <p className="font-semibold">{formatPrice(l.priceCents)}</p>
+        <Price priceCents={l.priceCents} compareAtCents={l.compareAtCents} wasLabel={t.product.wasPrice} className="font-semibold" />
       </div>
     </Link>
   );

@@ -23,6 +23,7 @@ export default async function NewListingPage() {
           grade: "",
           certNumber: "",
           price: "",
+          compareAt: "",
           stock: "1",
           images: "",
           published: true,
