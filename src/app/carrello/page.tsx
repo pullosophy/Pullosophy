@@ -6,6 +6,7 @@ import { setQuantity } from "@/app/actions/cart";
 import { startCheckout } from "@/app/actions/checkout";
 import { getT } from "@/lib/i18n";
 import { SafeImage } from "@/components/safe-image";
+import { getCustomer } from "@/lib/customer-auth";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -14,7 +15,7 @@ export async function generateMetadata() {
 }
 
 export default async function CartPage({ searchParams }: { searchParams: Promise<{ errore?: string }> }) {
-  const [{ errore }, { locale, t }, lines] = await Promise.all([searchParams, getT(), cartLines()]);
+  const [{ errore }, { locale, t }, lines, customer] = await Promise.all([searchParams, getT(), cartLines(), getCustomer()]);
   const countryNames = new Intl.DisplayNames([locale], { type: "region" });
   if (lines.length === 0) {
     return (
@@ -91,7 +92,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
       <form action={startCheckout} className="ml-auto max-w-sm space-y-3">
         <label className="block">
           <span className="text-sm opacity-70">{t.cart.email}</span>
-          <input type="email" name="email" required className="mt-1 w-full rounded border border-line bg-white px-3 py-2" />
+          <input type="email" name="email" required defaultValue={customer?.email ?? ""} className="mt-1 w-full rounded border border-line bg-white px-3 py-2" />
         </label>
         <label className="block">
           <span className="text-sm opacity-70">{t.cart.country}</span>
@@ -106,6 +107,11 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
           {t.cart.terms1} <Link href="/termini" className="underline">{t.cart.terms2}</Link>{t.cart.terms3}
         </p>
         <p className="text-xs opacity-70">{t.cart.note}</p>
+        {!customer && (
+          <p className="text-xs text-black/60">
+            {t.cart.accountHint1} <Link href="/accedi?next=/carrello" className="underline">{t.cart.accountHint2}</Link>
+          </p>
+        )}
       </form>
     </div>
   );

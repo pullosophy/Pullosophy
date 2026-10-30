@@ -8,6 +8,7 @@ import { cartLines, writeCart } from "@/lib/cart";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { getLocale } from "@/lib/i18n";
+import { getCustomer } from "@/lib/customer-auth";
 
 const schema = z.object({ country: z.string().length(2), email: z.email() });
 
@@ -22,9 +23,11 @@ export async function startCheckout(formData: FormData) {
   const subtotalCents = lines.reduce((sum, l) => sum + l.listing.priceCents * l.quantity, 0);
   const shippingCents = zone.freeOverCents !== null && subtotalCents >= zone.freeOverCents ? 0 : zone.baseCents;
 
+  const customer = await getCustomer();
   const order = await db.order.create({
     data: {
       email,
+      customerId: customer?.id ?? null,
       locale: await getLocale(),
       subtotalCents,
       shippingCents,
