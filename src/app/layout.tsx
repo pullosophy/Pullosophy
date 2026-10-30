@@ -6,6 +6,7 @@ import { Bebas_Neue, Inter } from "next/font/google";
 import { Logo } from "@/components/logo";
 import { cartCount } from "@/lib/cart-count";
 import { getT } from "@/lib/i18n";
+import { getCustomer } from "@/lib/customer-auth";
 import { LanguageSwitch } from "@/components/language-switch";
 import { WelcomePopup } from "@/components/welcome-popup";
 import { TopStrip, SocialIcon } from "@/components/top-strip";
@@ -27,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [count, { locale, t }] = await Promise.all([cartCount(), getT()]);
+  const [count, { locale, t }, customer] = await Promise.all([cartCount(), getT(), getCustomer()]);
   const nav = [
     { href: "/pokemon?tipo=single", label: t.nav.singles },
     { href: "/pokemon?tipo=sealed", label: t.nav.sealed },
@@ -64,6 +65,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <LanguageSwitch locale={locale} />
             </div>
             <Link
+              href={customer ? "/account" : "/accedi"}
+              className="hidden items-center gap-1.5 rounded-full border border-line px-3 py-2 text-sm font-medium hover:border-foreground sm:inline-flex"
+              aria-label={customer ? t.nav.account : t.nav.login}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21a8 8 0 0 1 16 0" />
+              </svg>
+              {customer ? t.nav.account : t.nav.login}
+            </Link>
+            <Link
               href="/carrello"
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-white hover:bg-brand"
             >
@@ -79,6 +91,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 {n.label}
               </Link>
             ))}
+            <Link href={customer ? "/account" : "/accedi"} className="whitespace-nowrap hover:text-brand">
+              {customer ? t.nav.account : t.nav.login}
+            </Link>
             <div className="ml-auto">
               <LanguageSwitch locale={locale} />
             </div>

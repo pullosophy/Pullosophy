@@ -145,6 +145,8 @@ enum OrderStatus {
 model Order {
   id              String      @id @default(cuid())
   email           String
+  customerId      String? // cliente registrato (null per gli acquisti da ospite)
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
   status          OrderStatus @default(PENDING)
   stripeSessionId String?     @unique
   subtotalCents   Int
@@ -159,6 +161,33 @@ model Order {
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+
+  @@index([customerId])
+}
+
+// Cliente registrato: email + password (scrypt). Gli ordini fatti da ospite con la stessa email vengono collegati.
+model Customer {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  name         String?
+  locale       String            @default("it")
+  orders       Order[]
+  sessions     CustomerSession[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+// Sessione di accesso: il cookie contiene solo il token casuale.
+model CustomerSession {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
 }
 
 model OrderItem {

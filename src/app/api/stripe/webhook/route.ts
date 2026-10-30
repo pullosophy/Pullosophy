@@ -44,6 +44,12 @@ async function markPaid(orderId: string, session: Stripe.Checkout.Session) {
       },
     });
     if (count === 0) return false;
+    // Ordine da ospite di un cliente registrato con la stessa email: lo colleghiamo al suo account.
+    const order = await tx.order.findUnique({ where: { id: orderId }, select: { email: true, customerId: true } });
+    if (order && !order.customerId) {
+      const customer = await tx.customer.findFirst({ where: { email: { equals: order.email, mode: "insensitive" } }, select: { id: true } });
+      if (customer) await tx.order.update({ where: { id: orderId }, data: { customerId: customer.id } });
+    }
     const items = await tx.orderItem.findMany({ where: { orderId } });
     for (const item of items) {
       await tx.listing.update({
