@@ -32,9 +32,36 @@ async function bannerImages(kind: ListingKind) {
 
 const withRelations = { card: true, set: true, game: true } satisfies Prisma.ListingInclude;
 
+// Illustrazioni per il mosaico dell'hero: prima le carte in vendita, poi le piu' quotate su Cardmarket.
+async function heroImages(n = 8) {
+  const listings = await db.listing.findMany({
+    where: { published: true, kind: { in: ["SINGLE", "GRADED"] }, card: { imageLarge: { not: null } } },
+    select: { card: { select: { id: true, imageLarge: true } } },
+    orderBy: { priceCents: "desc" },
+    take: n,
+  });
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const l of listings) {
+    if (!l.card?.imageLarge || seen.has(l.card.id)) continue;
+    seen.add(l.card.id);
+    out.push(l.card.imageLarge);
+  }
+  if (out.length < n) {
+    const cards = await db.card.findMany({
+      where: { imageLarge: { not: null }, cmTrendCents: { not: null }, id: { notIn: [...seen] } },
+      select: { imageLarge: true },
+      orderBy: { cmTrendCents: "desc" },
+      take: n - out.length,
+    });
+    out.push(...cards.map((c) => c.imageLarge!));
+  }
+  return out;
+}
+
 export default async function Home() {
   const { locale, t } = await getT();
-  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming, setsWithStock] = await Promise.all([
+  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming, setsWithStock, hero] = await Promise.all([
     bannerImages("SINGLE"),
     bannerImages("SEALED"),
     bannerImages("GRADED"),
@@ -73,6 +100,7 @@ export default async function Home() {
       orderBy: [{ releaseDate: "desc" }, { name: "asc" }],
       take: 8,
     }),
+    heroImages(),
   ]);
 
   const onSale = saleCandidates.filter((l) => l.compareAtCents! > l.priceCents).slice(0, 8);
@@ -85,15 +113,31 @@ export default async function Home() {
 
   return (
     <div className="space-y-16">
-      <section className="-mx-4 -mt-8 bg-brand px-4 py-14 text-white sm:rounded-b-3xl sm:py-20">
-        <div className="mx-auto max-w-6xl">
+      {/* Hero: mosaico di illustrazioni delle carte del catalogo (come i banner dei negozi fisici), testo sopra. */}
+      <section className="relative -mx-4 -mt-8 overflow-hidden bg-foreground px-4 py-14 text-white sm:rounded-b-3xl sm:py-20">
+        {hero.length >= 4 && (
+          <div aria-hidden className="absolute inset-0 grid grid-cols-4 sm:grid-cols-8">
+            {hero.slice(0, 8).map((src, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={src}
+                src={src}
+                alt=""
+                loading={i < 4 ? "eager" : "lazy"}
+                className={`h-full w-full object-cover object-[50%_18%] ${i >= 4 ? "hidden sm:block" : ""}`}
+              />
+            ))}
+          </div>
+        )}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
+        <div className="relative mx-auto max-w-6xl">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{t.home.kicker}</p>
-          <h1 className="font-display mt-4 text-[clamp(4rem,14vw,9rem)]">
-            PULL<span className="text-foreground">OSOPHY</span>
+          <h1 className="font-display mt-4 text-[clamp(4rem,14vw,9rem)] leading-none drop-shadow-lg">
+            PULL<span className="text-brand">OSOPHY</span>
           </h1>
-          <p className="mt-4 max-w-md text-lg text-white/90">{t.home.tagline}</p>
+          <p className="mt-4 max-w-md text-lg text-white/90 drop-shadow">{t.home.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/pokemon" className="rounded-full bg-foreground px-6 py-3 font-semibold hover:bg-black">
+            <Link href="/pokemon" className="rounded-full bg-brand px-6 py-3 font-semibold hover:bg-red-700">
               {t.home.browse}
             </Link>
             <Link href="/pokemon?tipo=graded" className="rounded-full bg-white px-6 py-3 font-semibold text-foreground hover:bg-white/90">
