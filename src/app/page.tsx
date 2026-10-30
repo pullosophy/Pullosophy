@@ -32,36 +32,9 @@ async function bannerImages(kind: ListingKind) {
 
 const withRelations = { card: true, set: true, game: true } satisfies Prisma.ListingInclude;
 
-// Illustrazioni per il mosaico dell'hero: prima le carte in vendita, poi le piu' quotate su Cardmarket.
-async function heroImages(n = 8) {
-  const listings = await db.listing.findMany({
-    where: { published: true, kind: { in: ["SINGLE", "GRADED"] }, card: { imageLarge: { not: null } } },
-    select: { card: { select: { id: true, imageLarge: true } } },
-    orderBy: { priceCents: "desc" },
-    take: n,
-  });
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const l of listings) {
-    if (!l.card?.imageLarge || seen.has(l.card.id)) continue;
-    seen.add(l.card.id);
-    out.push(l.card.imageLarge);
-  }
-  if (out.length < n) {
-    const cards = await db.card.findMany({
-      where: { imageLarge: { not: null }, cmTrendCents: { not: null }, id: { notIn: [...seen] } },
-      select: { imageLarge: true },
-      orderBy: { cmTrendCents: "desc" },
-      take: n - out.length,
-    });
-    out.push(...cards.map((c) => c.imageLarge!));
-  }
-  return out;
-}
-
 export default async function Home() {
   const { locale, t } = await getT();
-  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming, setsWithStock, hero] = await Promise.all([
+  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming, setsWithStock] = await Promise.all([
     bannerImages("SINGLE"),
     bannerImages("SEALED"),
     bannerImages("GRADED"),
@@ -85,9 +58,9 @@ export default async function Home() {
       orderBy: { releaseDate: "asc" },
       take: 8,
     }),
-    // Espansioni con prodotti disponibili, dalla piu' recente: riquadri "Sfoglia per espansione".
+    // Espansioni con logo e prodotti disponibili, dalla piu' recente: riquadri "Sfoglia per espansione".
     db.cardSet.findMany({
-      where: { listings: { some: { published: true, stock: { gt: 0 } } } },
+      where: { logoUrl: { not: null }, listings: { some: { published: true, stock: { gt: 0 } } } },
       select: {
         id: true,
         slug: true,
@@ -101,20 +74,9 @@ export default async function Home() {
       orderBy: [{ releaseDate: "desc" }, { name: "asc" }],
       take: 8,
     }),
-    heroImages(),
   ]);
-  // Una carta per espansione (la piu' quotata) come sfondo dei riquadri: cosi' hanno tutti un'immagine, logo o no.
-  const covers = new Map<string, string>();
-  if (setsWithStock.length) {
-    const cards = await db.card.findMany({
-      where: { setId: { in: setsWithStock.map((s) => s.id) }, imageLarge: { not: null } },
-      select: { setId: true, imageLarge: true },
-      orderBy: [{ cmTrendCents: { sort: "desc", nulls: "last" } }, { number: "asc" }],
-      take: 400,
-    });
-    for (const c of cards) if (!covers.has(c.setId)) covers.set(c.setId, c.imageLarge!);
-  }
-  const setTiles = setsWithStock.map((s) => ({ ...s, cover: covers.get(s.id) ?? null }));
+  // Solo espansioni con logo: quelle senza (o con il segnaposto TCGdex) vengono nascoste dal componente.
+  const setTiles = setsWithStock.filter((s) => s.logoUrl);
 
   const onSale = saleCandidates.filter((l) => l.compareAtCents! > l.priceCents).slice(0, 8);
   // Ordine come Nerdtopia: singole (chiaro), gradate (nero), sigillati (rosso). I titoli in i18n sono singole, sigillati, gradate.
@@ -126,31 +88,15 @@ export default async function Home() {
 
   return (
     <div className="space-y-16">
-      {/* Hero: mosaico di illustrazioni delle carte del catalogo (come i banner dei negozi fisici), testo sopra. */}
-      <section className="relative -mx-4 -mt-8 overflow-hidden bg-foreground px-4 py-14 text-white sm:rounded-b-3xl sm:py-20">
-        {hero.length >= 4 && (
-          <div aria-hidden className="absolute inset-0 grid grid-cols-4 sm:grid-cols-8">
-            {hero.slice(0, 8).map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={src}
-                src={src}
-                alt=""
-                loading={i < 4 ? "eager" : "lazy"}
-                className={`h-full w-full object-cover object-[50%_18%] ${i >= 4 ? "hidden sm:block" : ""}`}
-              />
-            ))}
-          </div>
-        )}
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
-        <div className="relative mx-auto max-w-6xl">
+      <section className="-mx-4 -mt-8 bg-brand px-4 py-14 text-white sm:rounded-b-3xl sm:py-20">
+        <div className="mx-auto max-w-6xl">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{t.home.kicker}</p>
-          <h1 className="font-display mt-4 text-[clamp(4rem,14vw,9rem)] leading-none drop-shadow-lg">
-            PULL<span className="text-brand">OSOPHY</span>
+          <h1 className="font-display mt-4 text-[clamp(4rem,14vw,9rem)]">
+            PULL<span className="text-foreground">OSOPHY</span>
           </h1>
-          <p className="mt-4 max-w-md text-lg text-white/90 drop-shadow">{t.home.tagline}</p>
+          <p className="mt-4 max-w-md text-lg text-white/90">{t.home.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/pokemon" className="rounded-full bg-brand px-6 py-3 font-semibold hover:bg-red-700">
+            <Link href="/pokemon" className="rounded-full bg-foreground px-6 py-3 font-semibold hover:bg-black">
               {t.home.browse}
             </Link>
             <Link href="/pokemon?tipo=graded" className="rounded-full bg-white px-6 py-3 font-semibold text-foreground hover:bg-white/90">
@@ -166,19 +112,23 @@ export default async function Home() {
         ))}
       </section>
 
-      {setsWithStock.length >= 2 && (
-        <section className="space-y-6">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="font-display text-5xl">{t.home.bySet}</h2>
-              <p className="text-black/60">{t.home.bySetText}</p>
+      {setTiles.length >= 2 && (
+        <SetTiles
+          sets={setTiles}
+          locale={locale}
+          productsLabel={t.catalog.products}
+          header={
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-5xl">{t.home.bySet}</h2>
+                <p className="text-black/60">{t.home.bySetText}</p>
+              </div>
+              <Link href="/pokemon" className="hidden text-sm font-semibold hover:text-brand sm:block">
+                {t.home.bySetAll}
+              </Link>
             </div>
-            <Link href="/pokemon" className="hidden text-sm font-semibold hover:text-brand sm:block">
-              {t.home.bySetAll}
-            </Link>
-          </div>
-          <SetTiles sets={setTiles} locale={locale} productsLabel={t.catalog.products} />
-        </section>
+          }
+        />
       )}
 
       {onSale.length > 0 && (
