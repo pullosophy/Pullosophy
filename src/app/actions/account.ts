@@ -9,7 +9,11 @@ import { getLocale } from "@/lib/i18n";
 import { revalidatePath } from "next/cache";
 
 // In caso di errore rimandiamo indietro email e nome: React svuota il form dopo l'invio.
-export type AccountFormState = { error?: "email" | "password" | "exists" | "credentials" | "generic"; email?: string; name?: string };
+export type AccountFormState = {
+  error?: "email" | "password" | "mismatch" | "exists" | "credentials" | "generic";
+  email?: string;
+  name?: string;
+};
 
 const email = z.email().transform((v) => v.trim().toLowerCase());
 const password = z.string().min(8).max(200);
@@ -20,6 +24,8 @@ export async function register(_prev: AccountFormState, formData: FormData): Pro
   if (!e.success) return { error: "email", ...typed };
   const p = password.safeParse(formData.get("password"));
   if (!p.success) return { error: "password", ...typed };
+  // "Ripeti password": evita che un refuso blocchi l'accesso al primo login.
+  if (formData.get("passwordRepeat") !== p.data) return { error: "mismatch", ...typed };
   const name = typed.name.trim().slice(0, 120) || null;
   if (await db.customer.findUnique({ where: { email: e.data } })) return { error: "exists", ...typed };
   const customer = await db.customer.create({
@@ -50,7 +56,7 @@ export async function logout() {
 
 export type Address = { line1: string; line2?: string; postalCode: string; city: string; state?: string; country: string };
 export type ProfileFormState = { error?: "address" | "generic"; saved?: boolean };
-export type PasswordFormState = { error?: "current" | "password" | "generic"; saved?: boolean };
+export type PasswordFormState = { error?: "current" | "password" | "mismatch" | "generic"; saved?: boolean };
 export type DeleteFormState = { error?: "current" | "generic" };
 
 const addressSchema = z.object({
@@ -102,6 +108,7 @@ export async function changePassword(_prev: PasswordFormState, formData: FormDat
   if (!verifyPassword(current, customer.passwordHash)) return { error: "current" };
   const next = password.safeParse(formData.get("password"));
   if (!next.success) return { error: "password" };
+  if (formData.get("passwordRepeat") !== next.data) return { error: "mismatch" };
   await db.customer.update({ where: { id: customer.id }, data: { passwordHash: hashPassword(next.data) } });
   return { saved: true };
 }

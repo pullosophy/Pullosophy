@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PasswordPair } from "@/components/password-pair";
 import Link from "next/link";
 import { login, register, type AccountFormState } from "@/app/actions/account";
 import type { Dictionary } from "@/lib/i18n";
@@ -24,18 +25,17 @@ export function AccountForm({ mode, t, next, initialEmail }: Props) {
         <span className="font-semibold">{t.email}</span>
         <input name="email" type="email" required autoComplete="email" defaultValue={state.email ?? initialEmail ?? ""} className={field} />
       </label>
-      <label className="block text-sm">
-        <span className="font-semibold">{t.password}</span>
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={mode === "register" ? 8 : undefined}
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
+      {mode === "login" ? (
+        <label className="block text-sm">
+          <span className="font-semibold">{t.password}</span>
+          <input name="password" type="password" required autoComplete="current-password" className={field} />
+        </label>
+      ) : (
+        <PasswordPair
+          labels={{ password: t.password, repeat: t.passwordRepeat, hint: t.passwordHint, mismatch: t.passwordMismatch }}
           className={field}
         />
-        {mode === "register" && <span className="mt-1 block text-xs text-black/50">{t.passwordHint}</span>}
-      </label>
+      )}
       {state.error && <p className="rounded-xl bg-brand/10 px-4 py-3 text-sm">{t.errors[state.error]}</p>}
       <button disabled={pending} className="w-full rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark disabled:opacity-60">
         {pending ? t.pending : mode === "login" ? t.loginButton : t.registerButton}
