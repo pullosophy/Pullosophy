@@ -11,6 +11,7 @@ import {
   type ProfileFormState,
 } from "@/app/actions/account";
 import type { Dictionary } from "@/lib/i18n";
+import { PasswordPair } from "@/components/password-pair";
 
 type Country = { code: string; name: string };
 type P = Dictionary["account"]["profile"];
@@ -81,10 +82,7 @@ export function PasswordForm({ t }: { t: P }) {
         <span className="font-semibold">{t.currentPassword}</span>
         <input name="current" type="password" required autoComplete="current-password" className={field} />
       </label>
-      <label className="block text-sm">
-        <span className="font-semibold">{t.newPassword}</span>
-        <input name="password" type="password" required minLength={8} autoComplete="new-password" className={field} />
-      </label>
+      <PasswordPair labels={{ password: t.newPassword, repeat: t.repeatPassword, mismatch: t.mismatchHint }} className={field} />
       {state.error && <p className="rounded-xl bg-brand/10 px-4 py-3 text-sm">{t.errors[state.error]}</p>}
       {state.saved && !state.error && <p className="rounded-xl bg-green-600/10 px-4 py-3 text-sm">{t.passwordSaved}</p>}
       <button disabled={pending} className={button}>{pending ? t.pending : t.changePassword}</button>
