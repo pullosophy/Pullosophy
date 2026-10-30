@@ -3,6 +3,7 @@ import { importCards, importSets, linkSet } from "@/app/actions/admin";
 import { SubmitButton } from "../submit-button";
 import { SafeImage } from "@/components/safe-image";
 import { ImportAll } from "./import-all";
+import { SetLogo } from "./set-logo";
 
 export const maxDuration = 60;
 
@@ -34,7 +35,7 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
         Dati e prezzi arrivano da TCGdex (gratuito, senza chiave). “Aggiorna tutte le carte” scarica tutte le espansioni una dopo l&apos;altra
         (ci vuole un po&apos;: lascia la pagina aperta), oppure importa solo quelle che vendi con il tasto accanto a ciascuna. Con le carte arrivano anche i prezzi di riferimento Cardmarket: premi “Aggiorna carte”
         ogni tanto per averli freschi. Se l&apos;import si ferma a metà, ripremi il tasto: riprende da dove era arrivato. Se un&apos;espansione risulta “non collegata a TCGdex”, scegli
-        dal menu “Collega a…” quella con lo stesso contenuto (TCGdex a volte usa un nome diverso) e premi “Collega”.
+        dal menu “Collega a…” quella con lo stesso contenuto (TCGdex a volte usa un nome diverso) e premi “Collega”. Con “Carica logo” puoi mettere il logo di un&apos;espansione che TCGdex non ha (meglio un PNG largo con sfondo trasparente).
       </p>
       {sets.length === 0 ? (
         <p className="opacity-70">Nessuna espansione: premi “Aggiorna elenco espansioni”.</p>
@@ -58,6 +59,7 @@ export default async function SetsPage({ searchParams }: { searchParams: Promise
                   {s.series} · {s.tcgdexId ?? "non collegata a TCGdex"} · {s._count.cards} carte importate
                 </p>
               </div>
+              <SetLogo setId={s.id} logoUrl={s.logoUrl} />
               {s.tcgdexId ? (
                 <form action={importCards}>
                   <input type="hidden" name="setId" value={s.id} />

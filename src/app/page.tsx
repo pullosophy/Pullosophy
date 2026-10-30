@@ -89,6 +89,7 @@ export default async function Home() {
     db.cardSet.findMany({
       where: { listings: { some: { published: true, stock: { gt: 0 } } } },
       select: {
+        id: true,
         slug: true,
         name: true,
         nameIt: true,
@@ -102,6 +103,18 @@ export default async function Home() {
     }),
     heroImages(),
   ]);
+  // Una carta per espansione (la piu' quotata) come sfondo dei riquadri: cosi' hanno tutti un'immagine, logo o no.
+  const covers = new Map<string, string>();
+  if (setsWithStock.length) {
+    const cards = await db.card.findMany({
+      where: { setId: { in: setsWithStock.map((s) => s.id) }, imageLarge: { not: null } },
+      select: { setId: true, imageLarge: true },
+      orderBy: [{ cmTrendCents: { sort: "desc", nulls: "last" } }, { number: "asc" }],
+      take: 400,
+    });
+    for (const c of cards) if (!covers.has(c.setId)) covers.set(c.setId, c.imageLarge!);
+  }
+  const setTiles = setsWithStock.map((s) => ({ ...s, cover: covers.get(s.id) ?? null }));
 
   const onSale = saleCandidates.filter((l) => l.compareAtCents! > l.priceCents).slice(0, 8);
   // Ordine come Nerdtopia: singole (chiaro), gradate (nero), sigillati (rosso). I titoli in i18n sono singole, sigillati, gradate.
@@ -164,7 +177,7 @@ export default async function Home() {
               {t.home.bySetAll}
             </Link>
           </div>
-          <SetTiles sets={setsWithStock} locale={locale} productsLabel={t.catalog.products} />
+          <SetTiles sets={setTiles} locale={locale} productsLabel={t.catalog.products} />
         </section>
       )}
 

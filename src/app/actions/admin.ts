@@ -70,6 +70,17 @@ export async function importCards(formData: FormData) {
 }
 
 // Collega a mano un'espansione vecchia (senza tcgdexId) a una creata da TCGdex: sposta l'id e cancella il doppione vuoto.
+// Logo caricato a mano per un'espansione (TCGdex non li ha tutti). URL vuoto = togli il logo.
+export async function saveSetLogo(formData: FormData) {
+  await requireAdmin();
+  const { setId, logoUrl } = z
+    .object({ setId: z.string().min(1), logoUrl: z.string().trim().url().or(z.literal("")) })
+    .parse(Object.fromEntries(formData));
+  await db.cardSet.update({ where: { id: setId }, data: { logoUrl: logoUrl || null } });
+  revalidatePath("/");
+  revalidatePath("/admin/espansioni");
+}
+
 export async function linkSet(formData: FormData) {
   await requireAdmin();
   const { setId, targetId } = z.object({ setId: z.string().min(1), targetId: z.string().min(1) }).parse(Object.fromEntries(formData));
