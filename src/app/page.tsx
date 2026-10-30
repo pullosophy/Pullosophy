@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { ListingCard } from "@/components/listing-card";
 import { TrustBar } from "@/components/trust-bar";
 import { CategoryBanner } from "@/components/category-banner";
+import { SetTiles } from "@/components/set-tiles";
 import type { ListingKind, Prisma } from "@prisma/client";
 import { getT } from "@/lib/i18n";
 
@@ -33,7 +34,7 @@ const withRelations = { card: true, set: true, game: true } satisfies Prisma.Lis
 
 export default async function Home() {
   const { locale, t } = await getT();
-  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming] = await Promise.all([
+  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming, setsWithStock] = await Promise.all([
     bannerImages("SINGLE"),
     bannerImages("SEALED"),
     bannerImages("GRADED"),
@@ -55,6 +56,21 @@ export default async function Home() {
       where: { published: true, stock: { gt: 0 }, releaseDate: { gt: new Date() } },
       include: withRelations,
       orderBy: { releaseDate: "asc" },
+      take: 8,
+    }),
+    // Espansioni con prodotti disponibili, dalla piu' recente: riquadri "Sfoglia per espansione".
+    db.cardSet.findMany({
+      where: { listings: { some: { published: true, stock: { gt: 0 } } } },
+      select: {
+        slug: true,
+        name: true,
+        nameIt: true,
+        logoUrl: true,
+        releaseDate: true,
+        game: { select: { slug: true } },
+        _count: { select: { listings: { where: { published: true, stock: { gt: 0 } } } } },
+      },
+      orderBy: [{ releaseDate: "desc" }, { name: "asc" }],
       take: 8,
     }),
   ]);
@@ -92,6 +108,21 @@ export default async function Home() {
           <CategoryBanner key={c.href} kicker={t.home.bannerKicker} cta={t.home.seeAll} {...c} />
         ))}
       </section>
+
+      {setsWithStock.length >= 2 && (
+        <section className="space-y-6">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="font-display text-5xl">{t.home.bySet}</h2>
+              <p className="text-black/60">{t.home.bySetText}</p>
+            </div>
+            <Link href="/pokemon" className="hidden text-sm font-semibold hover:text-brand sm:block">
+              {t.home.bySetAll}
+            </Link>
+          </div>
+          <SetTiles sets={setsWithStock} locale={locale} productsLabel={t.catalog.products} />
+        </section>
+      )}
 
       {onSale.length > 0 && (
         <section className="space-y-6">
