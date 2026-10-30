@@ -58,9 +58,9 @@ export default async function Home() {
       orderBy: { releaseDate: "asc" },
       take: 8,
     }),
-    // Espansioni con prodotti disponibili, dalla piu' recente: riquadri "Sfoglia per espansione".
+    // Espansioni con logo e prodotti disponibili, dalla piu' recente: riquadri "Sfoglia per espansione".
     db.cardSet.findMany({
-      where: { listings: { some: { published: true, stock: { gt: 0 } } } },
+      where: { logoUrl: { not: null }, listings: { some: { published: true, stock: { gt: 0 } } } },
       select: {
         id: true,
         slug: true,
@@ -75,18 +75,8 @@ export default async function Home() {
       take: 8,
     }),
   ]);
-  // Una carta per espansione (la piu' quotata) come sfondo dei riquadri: cosi' hanno tutti un'immagine, logo o no.
-  const covers = new Map<string, string>();
-  if (setsWithStock.length) {
-    const cards = await db.card.findMany({
-      where: { setId: { in: setsWithStock.map((s) => s.id) }, imageLarge: { not: null } },
-      select: { setId: true, imageLarge: true },
-      orderBy: [{ cmTrendCents: { sort: "desc", nulls: "last" } }, { number: "asc" }],
-      take: 400,
-    });
-    for (const c of cards) if (!covers.has(c.setId)) covers.set(c.setId, c.imageLarge!);
-  }
-  const setTiles = setsWithStock.map((s) => ({ ...s, cover: covers.get(s.id) ?? null }));
+  // Solo espansioni con logo: quelle senza (o con il segnaposto TCGdex) vengono nascoste dal componente.
+  const setTiles = setsWithStock.filter((s) => s.logoUrl);
 
   const onSale = saleCandidates.filter((l) => l.compareAtCents! > l.priceCents).slice(0, 8);
   // Ordine come Nerdtopia: singole (chiaro), gradate (nero), sigillati (rosso). I titoli in i18n sono singole, sigillati, gradate.
@@ -122,19 +112,23 @@ export default async function Home() {
         ))}
       </section>
 
-      {setsWithStock.length >= 2 && (
-        <section className="space-y-6">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="font-display text-5xl">{t.home.bySet}</h2>
-              <p className="text-black/60">{t.home.bySetText}</p>
+      {setTiles.length >= 2 && (
+        <SetTiles
+          sets={setTiles}
+          locale={locale}
+          productsLabel={t.catalog.products}
+          header={
+            <div className="flex items-end justify-between">
+              <div>
+                <h2 className="font-display text-5xl">{t.home.bySet}</h2>
+                <p className="text-black/60">{t.home.bySetText}</p>
+              </div>
+              <Link href="/pokemon" className="hidden text-sm font-semibold hover:text-brand sm:block">
+                {t.home.bySetAll}
+              </Link>
             </div>
-            <Link href="/pokemon" className="hidden text-sm font-semibold hover:text-brand sm:block">
-              {t.home.bySetAll}
-            </Link>
-          </div>
-          <SetTiles sets={setTiles} locale={locale} productsLabel={t.catalog.products} />
-        </section>
+          }
+        />
       )}
 
       {onSale.length > 0 && (
