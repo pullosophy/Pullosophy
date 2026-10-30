@@ -5,7 +5,7 @@ export const metadata = { title: "Privacy", description: "Informativa sul tratta
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy" updated="24 ottobre 2026">
+    <LegalPage title="Privacy" updated="30 ottobre 2026">
       <h2>Titolare del trattamento</h2>
       <p>
         {company.legalName}, {company.address}, email <a href={`mailto:${company.email}`}>{company.email}</a>.
@@ -25,6 +25,12 @@ export default function PrivacyPage() {
         <li>
           <strong>Newsletter</strong> (email lasciata nel pop-up di benvenuto): usata solo per inviarti il codice sconto e le novità del
           negozio, in base al tuo consenso. Puoi cancellarti in qualsiasi momento scrivendoci; i dati vengono eliminati subito.
+        </li>
+        <li>
+          <strong>Account cliente</strong> (email, password cifrata, nome, telefono e indirizzo facoltativi, storico ordini): creato solo
+          se ti registri, per farti ritrovare ordini e acquisti e compilare il checkout più in fretta. Conservato finché l&apos;account esiste:
+          puoi eliminarlo quando vuoi da &quot;I miei dati&quot;; gli ordini restano archiviati per gli obblighi fiscali, senza collegamento
+          all&apos;account. Il cookie di accesso è tecnico e dura 90 giorni.
         </li>
         <li>
           <strong>Carrello</strong>: il contenuto del carrello è salvato in un cookie tecnico sul tuo dispositivo, non su nostri server.

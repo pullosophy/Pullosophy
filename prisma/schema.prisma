@@ -169,10 +169,13 @@ model Order {
 model Customer {
   id           String            @id @default(cuid())
   email        String            @unique
-  passwordHash String
-  name         String?
-  locale       String            @default("it")
-  orders       Order[]
+  passwordHash     String
+  name             String?
+  phone            String?
+  address          Json? // indirizzo di spedizione predefinito { line1, line2, postalCode, city, state, country }
+  stripeCustomerId String?           @unique // Customer su Stripe, per precompilare il checkout
+  locale           String            @default("it")
+  orders           Order[]
   sessions     CustomerSession[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt

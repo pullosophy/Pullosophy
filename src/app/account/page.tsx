@@ -35,9 +35,14 @@ export default async function AccountPage() {
             {customer.name && <span className="text-black/50"> · {customer.email}</span>}
           </p>
         </div>
-        <form action={logout}>
-          <button className="rounded-full border border-line px-4 py-2 text-sm font-semibold hover:border-foreground">{a.logout}</button>
-        </form>
+        <div className="flex gap-2">
+          <Link href="/account/dati" className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-white hover:bg-brand">
+            {a.profile.title}
+          </Link>
+          <form action={logout}>
+            <button className="rounded-full border border-line px-4 py-2 text-sm font-semibold hover:border-foreground">{a.logout}</button>
+          </form>
+        </div>
       </div>
 
       <section className="space-y-4">
