@@ -43,7 +43,7 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.top-strip-track { animation: top-strip-scroll 60s linear infinite; }
+.top-strip-track { animation: top-strip-scroll 45s linear infinite; }
 .top-strip:hover .top-strip-track { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) {
   .top-strip-track { animation: none; }

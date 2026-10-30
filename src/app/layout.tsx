@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {previewMode && (
           <div className="bg-brand px-4 py-1.5 text-center text-xs font-semibold text-white">{t.previewBanner}</div>
         )}
-        <TopStrip text={t.topbar} />
+        <TopStrip messages={[t.topbar, ...t.trust.items.map((i) => i.title), t.home.tagline]} />
         <header className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
           <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-6">
             <Logo />
