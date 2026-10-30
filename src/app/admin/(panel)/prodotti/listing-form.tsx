@@ -35,6 +35,7 @@ export type ListingValues = {
   grade: string;
   certNumber: string;
   price: string;
+  compareAt: string;
   stock: string;
   images: string;
   description: string;
@@ -274,6 +275,14 @@ export function ListingForm({ games, sets, initial }: { games: Option[]; sets: O
           <input name="stock" type="number" min="0" defaultValue={initial.stock} required className={field} />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-sm opacity-70">Prezzo prima dello sconto (facoltativo)</span>
+        <input name="compareAt" type="number" step="0.01" min="0.01" defaultValue={initial.compareAt} className={field} />
+        <span className="mt-1 block text-xs opacity-60">
+          Se è più alto del prezzo, il prodotto mostra il prezzo barrato e l&apos;etichetta Offerta, e compare in home sotto “In offerta”. Lascia vuoto per togliere l&apos;offerta.
+        </span>
+      </label>
 
       <label className="block">
         <span className="text-sm opacity-70">Data di uscita (solo per i preordini)</span>

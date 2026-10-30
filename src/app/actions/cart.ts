@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { readCart, writeCart } from "@/lib/cart";
@@ -18,6 +19,8 @@ export async function addToCart(formData: FormData) {
   cart[listingId] = Math.min((cart[listingId] ?? 0) + Math.max(quantity, 1), listing.stock);
   await writeCart(cart);
   revalidatePath("/carrello");
+  // "Acquista ora": dritti al carrello, dove si sceglie il paese e si paga.
+  if (formData.get("buyNow")) redirect("/carrello");
 }
 
 export async function setQuantity(formData: FormData) {

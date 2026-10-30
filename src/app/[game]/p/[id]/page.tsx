@@ -10,6 +10,7 @@ import { addToCart } from "@/app/actions/cart";
 import { RestockForm } from "@/components/restock-form";
 import { SafeImage } from "@/components/safe-image";
 import { ListingCard } from "@/components/listing-card";
+import { Price, discountPercent } from "@/components/price";
 import { setName } from "@/lib/set-name";
 import { whatsappUrl } from "@/lib/company";
 
@@ -139,7 +140,14 @@ export default async function ListingPage({ params }: Params) {
           </Link>
           <h1 className="font-display mt-2 text-5xl">{listing.title}</h1>
         </div>
-        <p className="text-3xl font-semibold">{formatPrice(listing.priceCents)}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Price priceCents={listing.priceCents} compareAtCents={listing.compareAtCents} wasLabel={t.product.wasPrice} className="text-3xl font-semibold" />
+          {discountPercent(listing.priceCents, listing.compareAtCents) > 0 && (
+            <span className="rounded bg-green-600 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
+              {t.product.sale} −{discountPercent(listing.priceCents, listing.compareAtCents)}%
+            </span>
+          )}
+        </div>
         {listing.grader && (
           <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-muted p-4 text-sm">
             <span className="rounded-md bg-brand px-3 py-1 font-display text-2xl text-white">
@@ -177,7 +185,7 @@ export default async function ListingPage({ params }: Params) {
           <p className={`text-sm font-medium ${listing.stock <= 3 ? "text-brand" : "text-green-700"}`}>● {stockLine}</p>
         )}
         {listing.stock > 0 ? (
-          <form action={addToCart} className="flex gap-3 items-center">
+          <form action={addToCart} className="flex flex-wrap gap-3 items-center">
             <input type="hidden" name="listingId" value={listing.id} />
             <input
               type="number"
@@ -189,6 +197,9 @@ export default async function ListingPage({ params }: Params) {
             />
             <button className="flex-1 rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark">
               {t.product.addToCart}
+            </button>
+            <button name="buyNow" value="1" className="w-full rounded-full bg-foreground px-6 py-3 font-semibold text-white hover:bg-black">
+              {t.product.buyNow}
             </button>
           </form>
         ) : (

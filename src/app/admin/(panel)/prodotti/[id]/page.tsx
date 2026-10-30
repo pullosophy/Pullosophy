@@ -28,6 +28,7 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
           grade: listing.grade?.toString() ?? "",
           certNumber: listing.certNumber ?? "",
           price: (listing.priceCents / 100).toFixed(2),
+          compareAt: listing.compareAtCents ? (listing.compareAtCents / 100).toFixed(2) : "",
           stock: String(listing.stock),
           images: listing.images.join("\n"),
           published: listing.published,

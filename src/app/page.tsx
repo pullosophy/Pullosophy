@@ -2,28 +2,70 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { ListingCard } from "@/components/listing-card";
 import { TrustBar } from "@/components/trust-bar";
+import { CategoryBanner } from "@/components/category-banner";
+import type { ListingKind, Prisma } from "@prisma/client";
 import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
+// Immagini per i banner di categoria: i pezzi piu' costosi online di quel tipo.
+async function bannerImages(kind: ListingKind) {
+  const listings = await db.listing.findMany({
+    where: { kind, published: true },
+    include: { card: true },
+    orderBy: [{ stock: "desc" }, { priceCents: "desc" }],
+    take: 12,
+  });
+  const images = listings.map((l) => l.images[0] ?? l.card?.imageLarge ?? l.card?.imageSmall).filter((u): u is string => !!u);
+  // Catalogo ancora vuoto di singole: mostriamo le carte piu' quotate su Cardmarket tra quelle importate.
+  if (kind === "SINGLE" && images.length < 4) {
+    const cards = await db.card.findMany({
+      where: { imageLarge: { not: null }, cmTrendCents: { not: null } },
+      orderBy: { cmTrendCents: "desc" },
+      take: 4 - images.length,
+    });
+    images.push(...cards.map((c) => c.imageLarge!));
+  }
+  return [...new Set(images)].slice(0, 4);
+}
+
+const withRelations = { card: true, set: true, game: true } satisfies Prisma.ListingInclude;
+
 export default async function Home() {
   const { locale, t } = await getT();
-  const categories = ["/pokemon?tipo=single", "/pokemon?tipo=sealed", "/pokemon?tipo=graded"].map((href, i) => ({ href, ...t.home.categories[i] }));
-  const [latest, upcoming] = await Promise.all([
+  const [singleImgs, sealedImgs, gradedImgs, saleCandidates, latest, upcoming] = await Promise.all([
+    bannerImages("SINGLE"),
+    bannerImages("SEALED"),
+    bannerImages("GRADED"),
+    // Offerte: Prisma non confronta due colonne, quindi filtriamo qui sotto.
+    db.listing.findMany({
+      where: { published: true, stock: { gt: 0 }, compareAtCents: { not: null } },
+      include: withRelations,
+      orderBy: { updatedAt: "desc" },
+      take: 40,
+    }),
     db.listing.findMany({
       where: { published: true, stock: { gt: 0 } },
-      include: { card: true, set: true, game: true },
+      include: withRelations,
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
     // Preordini: prodotti con data di uscita futura.
     db.listing.findMany({
       where: { published: true, stock: { gt: 0 }, releaseDate: { gt: new Date() } },
-      include: { card: true, set: true, game: true },
+      include: withRelations,
       orderBy: { releaseDate: "asc" },
       take: 8,
     }),
   ]);
+
+  const onSale = saleCandidates.filter((l) => l.compareAtCents! > l.priceCents).slice(0, 8);
+  // Ordine come Nerdtopia: singole (chiaro), gradate (nero), sigillati (rosso). I titoli in i18n sono singole, sigillati, gradate.
+  const categories = [
+    { href: "/pokemon?tipo=single", title: t.home.categories[0].title, images: singleImgs, variant: "light" as const },
+    { href: "/pokemon?tipo=graded", title: t.home.categories[2].title, images: gradedImgs, variant: "dark" as const },
+    { href: "/pokemon?tipo=sealed", title: t.home.categories[1].title, images: sealedImgs, variant: "red" as const },
+  ];
 
   return (
     <div className="space-y-16">
@@ -45,19 +87,25 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
         {categories.map((c) => (
-          <Link
-            key={c.href}
-            href={c.href}
-            className="group rounded-2xl border border-line p-6 transition-colors hover:border-brand hover:bg-brand hover:text-white"
-          >
-            <h2 className="font-display text-4xl">{c.title}</h2>
-            <p className="mt-2 text-sm text-black/60 group-hover:text-white/90">{c.text}</p>
-            <span className="mt-4 inline-block text-sm font-semibold">{t.home.seeAll}</span>
-          </Link>
+          <CategoryBanner key={c.href} kicker={t.home.bannerKicker} cta={t.home.seeAll} {...c} />
         ))}
       </section>
+
+      {onSale.length > 0 && (
+        <section className="space-y-6">
+          <div>
+            <h2 className="font-display text-5xl">{t.home.onSale}</h2>
+            <p className="text-black/60">{t.home.onSaleText}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+            {onSale.map((l) => (
+              <ListingCard key={l.id} listing={l} t={t} locale={locale} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-6">
         <div className="flex items-end justify-between">

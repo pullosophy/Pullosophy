@@ -121,6 +121,7 @@ const listingSchema = z
     grade: optional(z.coerce.number().min(1).max(10)),
     certNumber: optional(z.string().trim()),
     price: z.coerce.number().positive("Prezzo obbligatorio"),
+    compareAt: optional(z.coerce.number().positive()),
     stock: z.coerce.number().int().min(0),
     images: z.string().default(""),
     description: z.string().trim().default(""),
@@ -158,6 +159,8 @@ export async function saveListing(_prev: ListingFormState, formData: FormData): 
     grade: v.kind === "GRADED" ? (v.grade ?? null) : null,
     certNumber: v.kind === "GRADED" ? (v.certNumber ?? null) : null,
     priceCents: Math.round(v.price * 100),
+    // Il prezzo barrato ha senso solo se e' piu' alto del prezzo di vendita.
+    compareAtCents: v.compareAt && v.compareAt > v.price ? Math.round(v.compareAt * 100) : null,
     stock: v.stock,
     images: v.images
       .split(/\s+/)
