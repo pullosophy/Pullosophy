@@ -5,10 +5,10 @@ import Link from "next/link";
 import { login, register, type AccountFormState } from "@/app/actions/account";
 import type { Dictionary } from "@/lib/i18n";
 
-type Props = { mode: "login" | "register"; t: Dictionary["account"]; next?: string };
+type Props = { mode: "login" | "register"; t: Dictionary["account"]; next?: string; initialEmail?: string };
 
 // Form di accesso / registrazione: stesso componente, cambia l'azione e i campi.
-export function AccountForm({ mode, t, next }: Props) {
+export function AccountForm({ mode, t, next, initialEmail }: Props) {
   const [state, action, pending] = useActionState<AccountFormState, FormData>(mode === "login" ? login : register, {});
   const field = "mt-1 w-full rounded-xl border border-line bg-white px-4 py-3";
   return (
@@ -22,7 +22,7 @@ export function AccountForm({ mode, t, next }: Props) {
       )}
       <label className="block text-sm">
         <span className="font-semibold">{t.email}</span>
-        <input name="email" type="email" required autoComplete="email" defaultValue={state.email ?? ""} className={field} />
+        <input name="email" type="email" required autoComplete="email" defaultValue={state.email ?? initialEmail ?? ""} className={field} />
       </label>
       <label className="block text-sm">
         <span className="font-semibold">{t.password}</span>

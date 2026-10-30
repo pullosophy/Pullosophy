@@ -47,9 +47,14 @@ export async function startCheckout(formData: FormData) {
   const origin = (await headers()).get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL;
   let session;
   try {
+    // Cliente registrato: usiamo (o creiamo) il suo Customer su Stripe, cosi' nome e indirizzo salvati nel profilo
+    // arrivano gia' compilati nel checkout e quello inserito viene salvato per la volta dopo.
+    const stripeCustomer = customer ? await ensureStripeCustomer(customer, email) : null;
     session = await stripe().checkout.sessions.create({
       mode: "payment",
-      customer_email: email,
+      ...(stripeCustomer
+        ? { customer: stripeCustomer, customer_update: { shipping: "auto" as const, name: "auto" as const } }
+        : { customer_email: email }),
       client_reference_id: order.id,
       metadata: { orderId: order.id },
       line_items: lines.map((l) => ({
@@ -96,4 +101,29 @@ export async function startCheckout(formData: FormData) {
   await db.order.update({ where: { id: order.id }, data: { stripeSessionId: session.id } });
   await writeCart({});
   redirect(session.url!);
+}
+
+type CustomerRow = NonNullable<Awaited<ReturnType<typeof getCustomer>>>;
+type Address = { line1: string; line2?: string; postalCode: string; city: string; state?: string; country: string };
+
+// Ritorna l'id del Customer Stripe del cliente (creato al primo checkout). Se Stripe non risponde, si procede senza.
+async function ensureStripeCustomer(customer: CustomerRow, email: string): Promise<string | null> {
+  try {
+    if (customer.stripeCustomerId && customer.email === email) return customer.stripeCustomerId;
+    const a = customer.address as Address | null;
+    const created = await stripe().customers.create({
+      email,
+      name: customer.name ?? undefined,
+      phone: customer.phone ?? undefined,
+      shipping: a
+        ? { name: customer.name ?? email, phone: customer.phone ?? undefined, address: { line1: a.line1, line2: a.line2, postal_code: a.postalCode, city: a.city, state: a.state, country: a.country } }
+        : undefined,
+      metadata: { customerId: customer.id },
+    });
+    if (customer.email === email) await db.customer.update({ where: { id: customer.id }, data: { stripeCustomerId: created.id } });
+    return created.id;
+  } catch (err) {
+    console.error("[checkout] Customer Stripe:", err);
+    return null;
+  }
 }

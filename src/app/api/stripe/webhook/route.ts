@@ -46,9 +46,34 @@ async function markPaid(orderId: string, session: Stripe.Checkout.Session) {
     if (count === 0) return false;
     // Ordine da ospite di un cliente registrato con la stessa email: lo colleghiamo al suo account.
     const order = await tx.order.findUnique({ where: { id: orderId }, select: { email: true, customerId: true } });
-    if (order && !order.customerId) {
+    let customerId = order?.customerId ?? null;
+    if (order && !customerId) {
       const customer = await tx.customer.findFirst({ where: { email: { equals: order.email, mode: "insensitive" } }, select: { id: true } });
-      if (customer) await tx.order.update({ where: { id: orderId }, data: { customerId: customer.id } });
+      if (customer) {
+        customerId = customer.id;
+        await tx.order.update({ where: { id: orderId }, data: { customerId } });
+      }
+    }
+    // Primo acquisto di un cliente senza indirizzo nel profilo: salviamo quello inserito nel checkout.
+    const ship = session.collected_information?.shipping_details;
+    if (customerId && ship?.address?.line1) {
+      const c = await tx.customer.findUnique({ where: { id: customerId }, select: { address: true, name: true } });
+      if (c && !c.address) {
+        await tx.customer.update({
+          where: { id: customerId },
+          data: {
+            name: c.name ?? ship.name ?? undefined,
+            address: {
+              line1: ship.address.line1,
+              line2: ship.address.line2 ?? undefined,
+              postalCode: ship.address.postal_code ?? "",
+              city: ship.address.city ?? "",
+              state: ship.address.state ?? undefined,
+              country: ship.address.country ?? "",
+            },
+          },
+        });
+      }
     }
     const items = await tx.orderItem.findMany({ where: { orderId } });
     for (const item of items) {

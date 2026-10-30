@@ -10,8 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.account.registerTitle, robots: { index: false } };
 }
 
-export default async function RegisterPage() {
-  const [{ t }, customer] = await Promise.all([getT(), getCustomer()]);
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ email?: string }> }) {
+  const [{ email }, { t }, customer] = await Promise.all([searchParams, getT(), getCustomer()]);
   if (customer) redirect("/account");
   return (
     <div className="mx-auto max-w-md space-y-8">
@@ -27,7 +27,7 @@ export default async function RegisterPage() {
           ))}
         </ul>
       </div>
-      <AccountForm mode="register" t={t.account} />
+      <AccountForm mode="register" t={t.account} initialEmail={email} />
     </div>
   );
 }
